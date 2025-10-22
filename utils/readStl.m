@@ -1,4 +1,4 @@
-function mesh = readStl(fname)
+function [mesh, data] = readStl(fname)
     % readStl - Function to read a .stl ASCII file and return the meshData
     %
     % mesh = readStl(fname)
@@ -7,8 +7,8 @@ function mesh = readStl(fname)
     %   fname:  Name of the stl file
     %
     % Outputs:
-    %   mesh:   Struct containing the list of all the vertices, faces and
-    %   edges
+    %   mesh:   Struct containing the list of all the vertices, faces and edges
+    %   data: 
 
     arguments
         fname {mustBeFile} % Filepath of the .stl file
@@ -102,7 +102,7 @@ function mesh = readStl(fname)
     mesh.vertexList = vertexList(:, 2:4);
 
     % Compute mesh center
-    mesh.center = mean(vertexList(:, 2:4)).*0;
+    data.center = mean(vertexList(:, 2:4)).*0;
 
     %% Edges and volume computation
 
@@ -138,14 +138,13 @@ function mesh = readStl(fname)
 
         % Volume is computed as sum of pyramids having as base each face
         % and as apex the center of the mesh
-        volume = volume + faceList(ii).computeVolume(mesh.center);
+        volume = volume + faceList(ii).computeVolume(data.center);
 
     end
 
     % Retrieve edgeList as cell array
     mesh.edgeList = num2cell(values(edgeDict));
-    
-    % Save computed volume
-    mesh.volume = volume;
+
+    data.volume = volume;
 
 end

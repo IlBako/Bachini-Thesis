@@ -1,4 +1,4 @@
-function [U, dU, ddU, laplacian] = gravitationalModel(meshData, fieldPoint, density, G)
+function [U, dU, ddU] = gravitationalModel(meshData, fieldPoint, density, G)
     % gravitationalModel - Function to compute the polyhedral gravity model
     % in a field point
     %
@@ -14,7 +14,6 @@ function [U, dU, ddU, laplacian] = gravitationalModel(meshData, fieldPoint, dens
     %   U:
     %   dU:
     %   ddU:
-    %   laplacian:
 
     arguments
         meshData    (1,1)   struct
@@ -45,7 +44,6 @@ function [U, dU, ddU, laplacian] = gravitationalModel(meshData, fieldPoint, dens
     faceComp_U = 0;
     faceComp_dU = 0;
     faceComp_ddU = 0;
-    faceComp_laplacian = 0;
 
     for ii = 1:length(faceList)
         face = faceList{ii};
@@ -57,13 +55,10 @@ function [U, dU, ddU, laplacian] = gravitationalModel(meshData, fieldPoint, dens
         faceComp_dU = faceComp_dU + face.Ff*rf * omf;
 
         faceComp_ddU = faceComp_ddU + face.Ff * omf;
-
-        faceComp_laplacian = faceComp_laplacian + omf;
     end
 
     U = 1/2*G*density*edgeComp_U - 1/2*G*density*faceComp_U;
     dU = -G*density*edgeComp_dU + G*density*faceComp_dU;
     ddU = G*density*edgeComp_ddU - G*density*faceComp_ddU;
-    laplacian = -G*density*faceComp_laplacian;
 
 end

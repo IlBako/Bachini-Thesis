@@ -3,9 +3,9 @@ clc; clearvars; close all;
 addpath("classes\");
 addpath("utils\");
 
-%% Load mesh
+%% Load asteroid Data
 
-meshData = readStl('models\Kleopatra_Ostro.stl');
+asteroidData = generateAsteroidData("Kleopatra", "X", "Z", 4.64e18, "filename", "models\Kleopatra_Ostro.stl");
 
 %% Draw mesh
 if false
@@ -15,13 +15,13 @@ xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
 
 drawMesh(meshData);
 end
+
 %% Gravitational model
-
-gridSize = (max(meshData.vertexList) - min(meshData.vertexList)).*2.5;
-
-[gravStruct, coords] = generateGravitationalMatrix(meshData, 20, gridSize, 4881);
+tic
+[gravStruct, coords] = generateGravitationalMatrix(asteroidData, 10, "useParallel", true);
+toc
 
 %%
 
 figure; hold on; grid on; axis equal;
-contourPlot(coords.X, coords.Y, coords.Z, gravStruct.gravAttNorm, 'xy', 'level', 0.1020, 'meshData', meshData, 'nContours', 30);
+contourPlot(coords.X, coords.Y, coords.Z, gravStruct.gravAttNorm, 'xy', 'level', 0.1020, 'meshData', asteroidData.mesh, 'nContours', 30);

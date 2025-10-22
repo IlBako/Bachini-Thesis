@@ -9,6 +9,7 @@ function contourPlot(X, Y, Z, data, plane, options)
         options.level       (1,1)   double = 0;
 
         options.meshData            struct = [];
+        options.center      (3,1)   double = [0; 0; 0]
         options.nContours   (1,1)   double = 30;
     end
 
