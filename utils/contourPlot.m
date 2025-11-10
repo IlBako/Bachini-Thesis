@@ -11,6 +11,7 @@ function contourPlot(X, Y, Z, data, plane, options)
         options.meshData            struct = [];
         options.center      (3,1)   double = [0; 0; 0]
         options.nContours   (1,1)   double = 30;
+        options.colorbarLabel (1,1) string = "";
     end
 
     if isvector(data) && numel(data) == numel(X)
@@ -56,7 +57,10 @@ function contourPlot(X, Y, Z, data, plane, options)
     contour(Xs, Ys, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
-    colorbar;
+    cb = colorbar;
+    if ~strcmpi(options.colorbarLabel, "")
+        ylabel(cb, options.colorbarLabel, 'Interpreter', 'latex', 'FontSize', 12);
+    end
     if ~isempty(options.meshData)
         drawMesh(options.meshData);
     end

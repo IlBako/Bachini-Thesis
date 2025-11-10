@@ -5,7 +5,9 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
         maxIAxis            (1,1) string {mustBeMember(maxIAxis, ["X", "Y", "Z"])}
         minIAxis            (1,1) string {mustBeMember(minIAxis, ["X", "Y", "Z"])}
         mass                (1,1) double {mustBePositive}    
+
         options.filename    (1,1) string {mustBeFile} = name + ".stl"
+        options.diameterTol (1,1) double = 1e-3
     end
     
     [meshData, data] = readStl(options.filename);
@@ -18,14 +20,20 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     asteroidData.maxIAxis = maxIdx;
     asteroidData.minIAxis = minIdx;
 
-    tol = 1e-3; % tolerance to consider other two coords ~ 0
-    Dp = computeDiameter(meshData.vertexList, maxIdx, tol);
-    De = computeDiameter(meshData.vertexList, minIdx, tol);
+    Dp = computeDiameter(meshData.vertexList, maxIdx, options.diameterTol);
+    De = computeDiameter(meshData.vertexList, minIdx, options.diameterTol);
 
     asteroidData.Dp = Dp;
     asteroidData.De = De;
 
     gridSize = (max(meshData.vertexList) - min(meshData.vertexList)).*2.5;
+
+    %% Compute principal moments of inertia
+
+    m = mass/size(meshData.vertexList, 1);
+    Ix = m * sum(meshData.vertexList(:, 2).^2 + meshData.vertexList(:, 3).^2);
+    Iy = m * sum(meshData.vertexList(:, 1).^2 + meshData.vertexList(:, 3).^2);
+    Iz = m * sum(meshData.vertexList(:, 1).^2 + meshData.vertexList(:, 2).^2);
 
     %% Set asteroid data
     asteroidData.name = name;
@@ -35,6 +43,9 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     asteroidData.volume = data.volume;
     asteroidData.density = mass/data.volume;
     asteroidData.gridSize = gridSize;
+    asteroidData.inertia = [Ix Iy Iz];
+
+
 end
 
 
