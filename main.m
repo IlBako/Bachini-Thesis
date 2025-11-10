@@ -18,7 +18,7 @@ end
 
 %% Gravitational model
 tic
-[gravStruct, coords] = generateGravitationalMatrix(asteroidData, 10, "useParallel", true);
+[gravStruct, coords] = generateGravitationalMatrix(asteroidData, 10, "useParallel", true, "useLaplacian", false);
 toc
 
 %%
