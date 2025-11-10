@@ -5,7 +5,7 @@ addpath("utils\");
 
 %% Load asteroid Data
 
-asteroidData = generateAsteroidData("Kleopatra", "Z", "X", 4.64e18, "filename", "models\Kleopatra_Ostro.stl", "diameterTol", 1);
+asteroidData = generateAsteroidData("67P", "Z", "X", 1e13, "filename", "models\67P_C-G.stl", "diameterTol", 100);
 
 %% Draw mesh
 if false
