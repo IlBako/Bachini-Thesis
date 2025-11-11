@@ -49,7 +49,6 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
 end
 
 
-% helper nested function to compute span along axis where the other two coords ~ 0
 function diameter = computeDiameter(vertexList, axisIdx, tol)
     other = setdiff(1:3, axisIdx);
     mask = all(abs(vertexList(:, other)) < tol, 2);

@@ -1,63 +1,58 @@
-function contourPlot(X, Y, Z, data, plane, options)
-
+function contourPlot(gridSize, Npoints, data, plane, level, options)
     arguments
-        X                           double
-        Y                           double
-        Z                           double
-        data                (:,1)   double
+        gridSize            (3,1)   double
+        Npoints             (1,1)   double
+        data                (1,1)   griddedInterpolant
         plane               {mustBeMember(plane,["xy","xz","yz"])} = "xy"
-        options.level       (1,1)   double = 0;
+        level               (1,1)   double = 0;
 
-        options.meshData            struct = [];
-        options.center      (3,1)   double = [0; 0; 0]
-        options.nContours   (1,1)   double = 30;
-        options.colorbarLabel (1,1) string = "";
+        options.meshData                struct = [];
+        options.center          (3,1)   double = [0; 0; 0]
+        options.nContours       (1,1)   double = 30;
+        options.colorbarLabel   (1,1)   string = "";
     end
 
-    if isvector(data) && numel(data) == numel(X)
-        data = reshape(data, size(X));
-    end
-    if ~isequal(size(X), size(Y), size(Z), size(data))
-        error('X, Y, Z must have the same size and data must be a vector matching numel(X).');
-    end
+    xdata = linspace(-gridSize(1), gridSize(1), Npoints);
+    ydata = linspace(-gridSize(2), gridSize(2), Npoints);
+    zdata = linspace(-gridSize(3), gridSize(3), Npoints);
+
+    % Permutation order from meshgrid to ndgrid
+    P = [2 1 3];
 
     switch plane
         case "xy"
-            vals = squeeze(Z(1,1,:));
-            [~, k] = min(abs(vals - options.level));
-            Xs = X(:, :, k);
-            Ys = Y(:, :, k);
-            Gs = data(:, :, k);
+            [X, Y] = meshgrid(xdata, ydata);
+            Xq = permute(X, P);
+            Yq = permute(Y, P);
+            Gs = data(Xq, Yq, level*ones(size(Xq)));
             xl = 'X [m]'; yl = 'Y [m]';
             viewAngle = [0 90];
 
         case "xz"
-            vals = squeeze(Y(1,:,1));
-            [~, k] = min(abs(vals - options.level));
-            Xs = squeeze(X(:, k, :));
-            Ys = squeeze(Z(:, k, :)); % vertical axis (Z)
-            Gs = squeeze(data(:, k, :));
+            [X, Y] = meshgrid(xdata, zdata);
+            Xq = permute(X, P);
+            Yq = permute(Y, P);
+            Gs = data(Xq, level*ones(size(Xq)), Yq);
             xl = 'X [m]'; yl = 'Z [m]';
             viewAngle = [0 90];
 
         case "yz"
-            vals = squeeze(X(:,1,1));
-            [~, k] = min(abs(vals - options.level));
-            Xs = squeeze(Y(k, :, :)); % Y axis
-            Ys = squeeze(Z(k, :, :)); % Z axis
-            Gs = squeeze(data(k, :, :));
+            [X, Y] = meshgrid(ydata, zdata);
+            Xq = permute(X, P);
+            Yq = permute(Y, P);
+            Gs = data(level*ones(size(Xq)), Xq, Yq);
             xl = 'Y [m]'; yl = 'Z [m]';
             viewAngle = [0 90];
 
         otherwise
             error("plane must be 'xy', 'xz' or 'yz'.");
-
     end
 
-    contour(Xs, Ys, Gs, options.nContours);
+    contour(Xq, Yq, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
     cb = colorbar;
+
     if ~strcmpi(options.colorbarLabel, "")
         ylabel(cb, options.colorbarLabel, 'Interpreter', 'latex', 'FontSize', 12);
     end

@@ -5,7 +5,7 @@ addpath("utils\");
 
 %% Load asteroid Data
 
-asteroidData = generateAsteroidData("67P", "Z", "X", 1e13, "filename", "models\67P_C-G.stl", "diameterTol", 100);
+asteroidData = generateAsteroidData("Kleopatra", "Z", "X", 4.64e18, "filename", "models\Kleopatra_Ostro.stl", "diameterTol", 1);
 
 %% Draw mesh
 if false
@@ -18,10 +18,14 @@ end
 
 %% Gravitational model
 tic
-[gravStruct, coords] = generateGravitationalMatrix(asteroidData, 10, "useParallel", true, "useLaplacian", false);
+[gravStruct, coords, griddedInterp] = generateGravitationalMatrix(asteroidData, 20, "useParallel", true, "useLaplacian", false, "interpVal", "Attraction Norm");
 toc
+%% 
+
+figure; hold on; grid on; axis equal;
+levelPlot(coords.X, coords.Y, coords.Z, gravStruct.gravAttNorm, 'xy', 0, 'meshData', asteroidData.mesh, 'nContours', 30, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
 
 %%
 
 figure; hold on; grid on; axis equal;
-contourPlot(coords.X, coords.Y, coords.Z, gravStruct.gravAttNorm, 'xy', 'level', 0.1020, 'meshData', asteroidData.mesh, 'nContours', 30, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
+contourPlot(asteroidData.gridSize, 100, griddedInterp{2}, 'xy', 0, 'meshData', asteroidData.mesh, 'nContours', 30, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
