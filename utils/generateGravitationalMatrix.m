@@ -6,7 +6,10 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
 
         options.useParallel     (1,1) logical = false
         options.useLaplacian    (1,1) logical = false
-        options.interpVal       (:, 1) string 
+        options.reshape         (1,1) logical = true
+        options.interpVal       (:, 1) string ...
+            {mustBeMember(options.interpVal, ["none"; "all"; "potential"; "attraction"; "attraction norm"; "gradient"; "laplacian"])} ...
+            = "none"
     end
 
     gridSize = asteroidData.gridSize;
@@ -48,26 +51,33 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
 
     delete(pw);
 
-    gravStruct.gravPot = cell2mat(gravPot);
-    gravStruct.gravAtt = cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false));
-    gravStruct.gravAttNorm = cell2mat(cellfun(@(v) norm(v), gravAtt, 'UniformOutput', false));
-    gravStruct.gravGrad = permute(cat(3, gravGrad{:}), [3, 1, 2]);
-    gravStruct.gravLaplace = cell2mat(gravLaplace);
+    if options.reshape
+        gravStruct.gravPot = reshape(cell2mat(gravPot), NPoints, NPoints, NPoints);
+        gravStruct.gravAtt = reshape(cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false)), NPoints, NPoints, NPoints, 3);
+        gravStruct.gravAttNorm = reshape(cell2mat(cellfun(@(v) norm(v), gravAtt, 'UniformOutput', false)), NPoints, NPoints, NPoints);
+        gravStruct.gravGrad = reshape(permute(cat(3, gravGrad{:}), [3, 1, 2]), NPoints, NPoints, NPoints, 3, 3);
+        gravStruct.gravLaplace = reshape(cell2mat(gravLaplace), NPoints, NPoints, NPoints);
+    else
+        gravStruct.gravPot = cell2mat(gravPot);
+        gravStruct.gravAtt = cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false));
+        gravStruct.gravAttNorm = cell2mat(cellfun(@(v) norm(v), gravAtt, 'UniformOutput', false));
+        gravStruct.gravGrad = permute(cat(3, gravGrad{:}), [3, 1, 2]);
+        gravStruct.gravLaplace = cell2mat(gravLaplace);
+    end
 
     coords.X = X;
     coords.Y = Y;
     coords.Z = Z;
 
-    if nargout > 2 && ~isempty(options.interpVal)
+    if nargout > 2 && ~strcmpi(options.interpVal, "none")
 
         if strcmpi(options.interpVal, "all")
             options.interpVal = ["potential"; "attraction"; "attraction norm"; "gradient"; "laplacian"];
         end
 
-        griddedInterp = cell(length(options.interpVal), 2);
+        griddedInterp = configureDictionary("string", "griddedInterpolant");
         
         for ii = 1:length(options.interpVal)
-            griddedInterp{ii, 1} = options.interpVal(ii);
 
             switch lower(options.interpVal(ii))
                 case "potential"
@@ -89,8 +99,13 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
                     warning("Unknown interpolation value: " + options.interpVal(ii));
                     continue;
             end
-            griddedInterp{ii, 2} = generateInterpolant(interpData, coords);
+            griddedInterp(lower(options.interpVal(ii))) = generateInterpolant(interpData, coords);
+            if strcmpi(options.interpVal(ii), "laplacian")
+                griddedInterp(lower(options.interpVal(ii))).Method = 'nearest';
+            end
         end
+    else
+        griddedInterp = {};
     end
 end
 
@@ -111,5 +126,5 @@ function F = generateInterpolant(interpData, coords)
     Y = permute(coords.Y, P);
     Z = permute(coords.Z, P);
 
-    F = griddedInterpolant(X, Y, Z, interpData, 'linear');
+    F = griddedInterpolant(X, Y, Z, interpData, 'linear', 'none');
 end

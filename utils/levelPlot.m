@@ -4,7 +4,7 @@ function levelPlot(X, Y, Z, data, plane, level, options)
         X                           double
         Y                           double
         Z                           double
-        data                (:,1)   double
+        data                        double
         plane               {mustBeMember(plane,["xy","xz","yz"])} = "xy"
         level       (1,1)   double = 0;
 
@@ -54,7 +54,7 @@ function levelPlot(X, Y, Z, data, plane, level, options)
 
     end
 
-    contour(Xs, Ys, Gs, options.nContours);
+    contourf(Xs, Ys, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
     cb = colorbar;

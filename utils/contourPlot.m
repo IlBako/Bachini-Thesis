@@ -48,7 +48,7 @@ function contourPlot(gridSize, Npoints, data, plane, level, options)
             error("plane must be 'xy', 'xz' or 'yz'.");
     end
 
-    contour(Xq, Yq, Gs, options.nContours);
+    contourf(Xq, Yq, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
     cb = colorbar;
