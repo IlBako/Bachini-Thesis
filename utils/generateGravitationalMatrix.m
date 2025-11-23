@@ -1,8 +1,8 @@
-function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(asteroidData, NPoints, options)
+function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData, coords, options)
 
     arguments
         asteroidData            (1,1)   struct
-        NPoints                 (1,1)   double
+        coords                  (1,1)   struct
 
         options.useParallel     (1,1) logical = false
         options.useLaplacian    (1,1) logical = false
@@ -12,37 +12,63 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
             = "none"
     end
 
-    gridSize = asteroidData.gridSize;
     meshData = asteroidData.mesh;
     density = asteroidData.density;
 
-    xdata = linspace(-gridSize(1), gridSize(1), NPoints);
-    ydata = linspace(-gridSize(2), gridSize(2), NPoints);
-    zdata = linspace(-gridSize(3), gridSize(3), NPoints);
+    switch coords.type
+        case "linear"
+            X = coords.X;
+            Y = coords.Y;
+            Z = coords.Z;
+            pointMats = [X(:) Y(:) Z(:)];
+        case "radial"
+            R_vect = coords.R;
+            theta_vect = coords.theta;
+            phi_vect = coords.phi;
+            [R, Th, Phi] = ndgrid(R_vect, theta_vect, phi_vect);
+            pointMats = [R(:) Th(:) Phi(:)];
+        otherwise
+            error("Unsupported coordinate type: %s", coords.type);
+    end
 
-    [X, Y, Z] = meshgrid(xdata, ydata, zdata);
+    N = size(pointMats, 1);
 
-    gravPot = cell(numel(X), 1);
-    gravAtt = cell(numel(X), 1);
-    gravGrad = cell(numel(X), 1);
-    gravLaplace = cell(numel(X), 1);
+    gravPot = cell(N, 1);
+    gravAtt = cell(N, 1);
+    gravGrad = cell(N, 1);
+    gravLaplace = cell(N, 1);
 
-    pointMats = [X(:) Y(:) Z(:)];
 
     laplaceTol = 1e-6;
     pw = PoolWaitbar(size(pointMats, 1), "Gravity model generation for n="+num2str(size(pointMats, 1)) + " points");
 
+    coords_type = coords.type;
+
     if options.useParallel
         useLaplacian = options.useLaplacian;
         parfor ii = 1:size(pointMats, 1)
-            currPoint = pointMats(ii, :)';
+            switch coords_type
+                case "linear"
+                    currPoint = pointMats(ii, :)';
+                case "radial"
+                    currPoint = sphere2cart(pointMats(ii, :))';
+                otherwise
+                    error("Unsupported coordinate type: %s", coords_type);
+            end
             [gravPot{ii}, gravAtt{ii}, gravGrad{ii}, gravLaplace{ii}] = ...
                 runGravModel(meshData, currPoint, density, useLaplacian, laplaceTol);
             increment(pw);
         end
     else
         for ii = 1:size(pointMats, 1)
-            currPoint = pointMats(ii, :)';
+            switch coords_type
+                case "linear"
+                    currPoint = pointMats(ii, :)';
+                case "radial"
+                    currPoint = sphere2cart(pointMats(ii, :))';
+                otherwise
+                    error("Unsupported coordinate type: %s", coords.type);
+            end
             [gravPot{ii}, gravAtt{ii}, gravGrad{ii}, gravLaplace{ii}] = ...
                 runGravModel(meshData, currPoint, density, options.useLaplacian, laplaceTol);
             increment(pw);
@@ -51,12 +77,23 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
 
     delete(pw);
 
+    switch coords.type
+        case "linear"
+            NPointsX = size(X, 1);
+            NPointsY = size(Y, 2);
+            NPointsZ = size(Z, 3);
+        case "radial"
+            NPointsX = length(R_vect);
+            NPointsY = length(theta_vect);
+            NPointsZ = length(phi_vect);
+    end
+
     if options.reshape
-        gravStruct.gravPot = reshape(cell2mat(gravPot), NPoints, NPoints, NPoints);
-        gravStruct.gravAtt = reshape(cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false)), NPoints, NPoints, NPoints, 3);
-        gravStruct.gravAttNorm = reshape(cell2mat(cellfun(@(v) norm(v), gravAtt, 'UniformOutput', false)), NPoints, NPoints, NPoints);
-        gravStruct.gravGrad = reshape(permute(cat(3, gravGrad{:}), [3, 1, 2]), NPoints, NPoints, NPoints, 3, 3);
-        gravStruct.gravLaplace = reshape(cell2mat(gravLaplace), NPoints, NPoints, NPoints);
+        gravStruct.gravPot = reshape(cell2mat(gravPot), NPointsX, NPointsY, NPointsZ);
+        gravStruct.gravAtt = reshape(cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false)), NPointsX, NPointsY, NPointsZ, 3);
+        gravStruct.gravAttNorm = reshape(cell2mat(cellfun(@(v) norm(v), gravAtt, 'UniformOutput', false)), NPointsX, NPointsY, NPointsZ);
+        gravStruct.gravGrad = reshape(permute(cat(3, gravGrad{:}), [3, 1, 2]), NPointsX, NPointsY, NPointsZ, 3, 3);
+        gravStruct.gravLaplace = reshape(cell2mat(gravLaplace), NPointsX, NPointsY, NPointsZ);
     else
         gravStruct.gravPot = cell2mat(gravPot);
         gravStruct.gravAtt = cell2mat(cellfun(@(v) v(:).', gravAtt, 'UniformOutput', false));
@@ -65,11 +102,7 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
         gravStruct.gravLaplace = cell2mat(gravLaplace);
     end
 
-    coords.X = X;
-    coords.Y = Y;
-    coords.Z = Z;
-
-    if nargout > 2 && ~strcmpi(options.interpVal, "none")
+    if nargout > 1 && ~strcmpi(options.interpVal, "none")
 
         if strcmpi(options.interpVal, "all")
             options.interpVal = ["potential"; "attraction"; "attraction norm"; "gradient"; "laplacian"];
@@ -81,27 +114,28 @@ function [gravStruct, coords, griddedInterp] = generateGravitationalMatrix(aster
 
             switch lower(options.interpVal(ii))
                 case "potential"
-                    interpData = reshape(gravStruct.gravPot, NPoints, NPoints, NPoints);
-                    interpData = permute(interpData, [2 1 3]);
+                    interpData = gravStruct.gravPot;
                 case "attraction"
-                    interpData = reshape(gravStruct.gravAtt, NPoints, NPoints, NPoints, 3);
-                    interpData = permute(interpData, [2 1 3 4]);
+                    interpData = gravStruct.gravAtt;
                 case "attraction norm"
-                    interpData = reshape(gravStruct.gravAttNorm, NPoints, NPoints, NPoints);
-                    interpData = permute(interpData, [2 1 3]);
+                    interpData = gravStruct.gravAttNorm;
                 case "gradient"
-                    interpData = reshape(gravStruct.gravGrad, NPoints, NPoints, NPoints, 3, 3);
-                    interpData = permute(interpData, [2 1 3 4 5]);
+                    interpData = gravStruct.gravGrad;
                 case "laplacian"
-                    interpData = reshape(gravStruct.gravLaplace, NPoints, NPoints, NPoints);
-                    interpData = permute(interpData, [2 1 3]);
+                    interpData = gravStruct.gravLaplace;
                 otherwise
                     warning("Unknown interpolation value: " + options.interpVal(ii));
                     continue;
             end
+
+            if ~options.reshape
+                interpData = reshape(interpData, [NPointsX NPointsY NPointsZ size(interpData, 2:ndims(interpData))]);
+            end
+
             griddedInterp(lower(options.interpVal(ii))) = generateInterpolant(interpData, coords);
             if strcmpi(options.interpVal(ii), "laplacian")
                 griddedInterp(lower(options.interpVal(ii))).Method = 'nearest';
+                griddedInterp(lower(options.interpVal(ii))).ExtrapolationMethod = 'nearest';
             end
         end
     else
@@ -121,10 +155,15 @@ function [gravPot, gravAtt, gravGrad, gravLaplace] = runGravModel(meshData, curr
 end
 
 function F = generateInterpolant(interpData, coords)
-    P = [2 1 3];
-    X = permute(coords.X, P);
-    Y = permute(coords.Y, P);
-    Z = permute(coords.Z, P);
+    if strcmpi(coords.type, "linear")
+        P = [2 1 3];
+        X = permute(coords.X, P);
+        Y = permute(coords.Y, P);
+        Z = permute(coords.Z, P);
+        interpData = permute(interpData, [2 1 3:ndims(interpData)]);
+    elseif strcmpi(coords.type, "radial")
+        [X, Y, Z] = ndgrid(coords.R, coords.theta, coords.phi);
+    end
+    F = griddedInterpolant(X, Y, Z, interpData, 'linear', 'linear');
 
-    F = griddedInterpolant(X, Y, Z, interpData, 'linear', 'none');
 end
