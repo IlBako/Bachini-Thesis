@@ -33,6 +33,10 @@ function [U, dU, ddU] = gravitationalModel(meshData, fieldPoint, density, G)
         edge = edgeList{ii};
         re = edge.vertices(:,1) - fieldPoint;
         Le = edge.computeLe(fieldPoint);
+
+        if all(re == 0) || isinf(Le)
+            continue
+        end
         
         edgeComp_U = edgeComp_U + re'*edge.Ee*re * Le;
 

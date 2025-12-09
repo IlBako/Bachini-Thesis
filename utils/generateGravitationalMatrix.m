@@ -43,9 +43,11 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
     pw = PoolWaitbar(size(pointMats, 1), "Gravity model generation for n="+num2str(size(pointMats, 1)) + " points");
 
     coords_type = coords.type;
+    useLaplacian = options.useLaplacian;
+    updatePoints = false;
 
     if options.useParallel
-        useLaplacian = options.useLaplacian;
+        warning('off','MATLAB:mir_warning_maybe_uninitialized_temporary');
         parfor ii = 1:size(pointMats, 1)
             switch coords_type
                 case "linear"
@@ -59,6 +61,7 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
                 runGravModel(meshData, currPoint, density, useLaplacian, laplaceTol);
             increment(pw);
         end
+        warning('on','MATLAB:mir_warning_maybe_uninitialized_temporary');
     else
         for ii = 1:size(pointMats, 1)
             switch coords_type
@@ -67,10 +70,11 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
                 case "radial"
                     currPoint = sphere2cart(pointMats(ii, :))';
                 otherwise
-                    error("Unsupported coordinate type: %s", coords.type);
+                    error("Unsupported coordinate type: %s", coords_type);
             end
             [gravPot{ii}, gravAtt{ii}, gravGrad{ii}, gravLaplace{ii}] = ...
-                runGravModel(meshData, currPoint, density, options.useLaplacian, laplaceTol);
+                runGravModel(meshData, currPoint, density, useLaplacian, laplaceTol);
+            
             increment(pw);
         end
     end
@@ -143,15 +147,16 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
     end
 end
 
-function [gravPot, gravAtt, gravGrad, gravLaplace] = runGravModel(meshData, currPoint, density, useLaplacian, laplaceTol)
+function [gravPot, gravAtt, gravGrad, gravLaplace, pointChanged, newPoint] = runGravModel(meshData, currPoint, density, useLaplacian, laplaceTol)
+    pointChanged = false;
     gravLaplace = computeLaplacian(meshData.faceList, currPoint);
     if useLaplacian && (abs(gravLaplace - 4*pi) < laplaceTol)
-        gravPot = nan;
-        gravAtt = nan(1,3);
-        gravGrad = nan(3,3);
-    else
-        [gravPot, gravAtt, gravGrad] = gravitationalModel(meshData, currPoint, density);
+        [~, idx] = min(vecnorm(meshData.vertexList - currPoint',2,2));
+        currPoint = meshData.vertexList(idx, :);
+        pointChanged = true;
     end
+    [gravPot, gravAtt, gravGrad] = gravitationalModel(meshData, currPoint, density);
+    newPoint = currPoint;
 end
 
 function F = generateInterpolant(interpData, coords)

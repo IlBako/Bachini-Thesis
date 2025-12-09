@@ -24,7 +24,12 @@ function contourPlot(gridSize, Npoints, data, plane, level, options)
             [X, Y] = meshgrid(xdata, ydata);
             Xq = permute(X, P);
             Yq = permute(Y, P);
-            Gs = data(Xq, Yq, level*ones(size(Xq)));
+            % Gs = data(Xq, Yq, level*ones(size(Xq)));
+            % xl = 'X [m]'; yl = 'Y [m]';
+            % viewAngle = [0 90];
+
+            [R, theta, phi] = cart2sphere(xdata, ydata, level);
+            Gs = data(R, theta, phi);
             xl = 'X [m]'; yl = 'Y [m]';
             viewAngle = [0 90];
 

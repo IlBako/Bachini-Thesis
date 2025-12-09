@@ -1,10 +1,11 @@
-function coords = generatePointGrid(gridSize, type, NPoints, minRad)
+function coords = generatePointGrid(gridSize, type, NPoints, minRad, maxRad)
 
     arguments
         gridSize    (3,1) double
         type        (1,1) string {mustBeMember(type, ["linear", "radial"])}
         NPoints     (:,1) double
         minRad      (1,1) double = 0
+        maxRad      (1,1) double = max(gridSize)
     end
 
     switch(type)
@@ -40,8 +41,6 @@ function coords = generatePointGrid(gridSize, type, NPoints, minRad)
             else
                 error("NPoints must be either 1x1 or 3x1");
             end
-
-            maxRad = max(gridSize);
             
             R = logspace(log10(0.9*minRad), log10(maxRad), NPointsR);
             theta = linspace(1e-6, pi-1e-6, NPointsTheta);

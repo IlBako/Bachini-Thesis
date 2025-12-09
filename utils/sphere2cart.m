@@ -12,6 +12,9 @@ function [varargout] = sphere2cart(R, inclination, azimuth)
         R = R(1);
     end
 
+    % Ensure azimuth in [0, 2pi)
+    azimuth = mod(azimuth, 2*pi);
+
     NR = length(R);
     NIn = length(inclination);
     NAz = length(azimuth);
