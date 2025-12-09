@@ -24,7 +24,12 @@ function contourPlot(gridSize, Npoints, data, plane, level, options)
             [X, Y] = meshgrid(xdata, ydata);
             Xq = permute(X, P);
             Yq = permute(Y, P);
-            Gs = data(Xq, Yq, level*ones(size(Xq)));
+            % Gs = data(Xq, Yq, level*ones(size(Xq)));
+            % xl = 'X [m]'; yl = 'Y [m]';
+            % viewAngle = [0 90];
+
+            [R, theta, phi] = cart2sphere(xdata, ydata, level);
+            Gs = data(R, theta, phi);
             xl = 'X [m]'; yl = 'Y [m]';
             viewAngle = [0 90];
 
@@ -48,7 +53,7 @@ function contourPlot(gridSize, Npoints, data, plane, level, options)
             error("plane must be 'xy', 'xz' or 'yz'.");
     end
 
-    contour(Xq, Yq, Gs, options.nContours);
+    contourf(Xq, Yq, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
     cb = colorbar;

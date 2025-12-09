@@ -4,7 +4,7 @@ function levelPlot(X, Y, Z, data, plane, level, options)
         X                           double
         Y                           double
         Z                           double
-        data                (:,1)   double
+        data                        double
         plane               {mustBeMember(plane,["xy","xz","yz"])} = "xy"
         level       (1,1)   double = 0;
 
@@ -23,11 +23,19 @@ function levelPlot(X, Y, Z, data, plane, level, options)
 
     switch plane
         case "xy"
-            vals = squeeze(Z(1,1,:));
+            % vals = squeeze(Z(1,1,:));
+            % [~, k] = min(abs(vals - level));
+            % Xs = X(:, :, k);
+            % Ys = Y(:, :, k);
+            % Gs = data(:, :, k);
+            % xl = 'X [m]'; yl = 'Y [m]';
+            % viewAngle = [0 90];
+
+            vals = squeeze(Z(1,:,1));
             [~, k] = min(abs(vals - level));
-            Xs = X(:, :, k);
-            Ys = Y(:, :, k);
-            Gs = data(:, :, k);
+            Xs = squeeze(X(:, k, :));
+            Ys = squeeze(Y(:, k, :));
+            Gs = squeeze(data(:, k, :));
             xl = 'X [m]'; yl = 'Y [m]';
             viewAngle = [0 90];
 
@@ -54,7 +62,7 @@ function levelPlot(X, Y, Z, data, plane, level, options)
 
     end
 
-    contour(Xs, Ys, Gs, options.nContours);
+    contourf(Xs, Ys, Gs, options.nContours);
     xlabel(xl); ylabel(yl);
     view(viewAngle);
     cb = colorbar;
