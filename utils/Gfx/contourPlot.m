@@ -28,7 +28,7 @@ function contourPlot(gridSize, Npoints, data, plane, level, options)
             % xl = 'X [m]'; yl = 'Y [m]';
             % viewAngle = [0 90];
 
-            [R, theta, phi] = cart2sphere(xdata, ydata, level);
+            [R, theta, phi] = cart2Sphere(xdata, ydata, level);
             Gs = data(R, theta, phi);
             xl = 'X [m]'; yl = 'Y [m]';
             viewAngle = [0 90];

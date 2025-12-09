@@ -47,7 +47,7 @@ function coords = generatePointGrid(gridSize, type, NPoints, minRad, maxRad)
             phi = linspace(0, 2*pi, NPointsPhi);
             % phi(end) = [];
 
-            [X, Y, Z] = sphere2cart(R, theta, phi);
+            [X, Y, Z] = sphere2Cart(R, theta, phi);
 
             coords.R = R;
             coords.theta = theta;

@@ -53,7 +53,7 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
                 case "linear"
                     currPoint = pointMats(ii, :)';
                 case "radial"
-                    currPoint = sphere2cart(pointMats(ii, :))';
+                    currPoint = sphere2Cart(pointMats(ii, :))';
                 otherwise
                     error("Unsupported coordinate type: %s", coords_type);
             end
@@ -68,7 +68,7 @@ function [gravStruct, griddedInterp] = generateGravitationalMatrix(asteroidData,
                 case "linear"
                     currPoint = pointMats(ii, :)';
                 case "radial"
-                    currPoint = sphere2cart(pointMats(ii, :))';
+                    currPoint = sphere2Cart(pointMats(ii, :))';
                 otherwise
                     error("Unsupported coordinate type: %s", coords_type);
             end

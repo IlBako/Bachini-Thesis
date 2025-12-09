@@ -26,7 +26,7 @@ toc
 
 %%
 
-[X, Y, Z] = sphere2cart(coords.R, coords.theta, coords.phi);
+[X, Y, Z] = sphere2Cart(coords.R, coords.theta, coords.phi);
 % gravAttNorm = reshape(gravStruct.gravAttNorm, size(X));
 % 
 % figure; hold on; view(20,30);
