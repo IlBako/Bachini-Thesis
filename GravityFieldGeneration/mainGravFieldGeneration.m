@@ -1,11 +1,11 @@
 clc; clearvars; close all;
 
-addpath("classes\");
 addpath("utils\");
+addpath(genpath("..\Utils\"));
 
 %% Load asteroid Data
 
-asteroidData = generateAsteroidData("67P_CG", "Z", "X", 9.982e12, "filename", "models\67P_C-G.stl", "diameterTol", 100);
+asteroidData = generateAsteroidData("Kleopatraz", "Z", "X", 4.64e18, "filename", "..\AsteroidModels\Kleopatra_Ostro.stl", "diameterTol", 1);
 
 %% Draw mesh
 if false
@@ -17,11 +17,11 @@ drawMesh(asteroidData.mesh);
 end
 
 %% Gravitational model
-NPoints = 100;
-% NPoints = 50;
+% NPoints = 100;
+NPoints = 25;
 coords = generatePointGrid(asteroidData.gridSize, "radial", NPoints, min(vecnorm(asteroidData.mesh.vertexList, 2, 2)));
 tic
-[gravStruct, coords, gravInterpDict] = generateGravitationalMatrix(asteroidData, coords, "useParallel", true, "useLaplacian", true, "reshape", true, "interpVal", "all");
+[gravStruct, gravInterpDict] = generateGravitationalMatrix(asteroidData, coords, "useParallel", true, "useLaplacian", true, "reshape", true, "interpVal", "all");
 toc
 
 %%
