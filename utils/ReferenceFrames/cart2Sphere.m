@@ -1,5 +1,5 @@
 function [varargout] = cart2Sphere(x, y, z)
-    % cart2Sphere - Converts cartesian coordinates to spherical coordinates
+    % cart2Sphere - Convert cartesian coordinates to spherical coordinates
     % 
     % Converts Cartesian coordinates (X, Y, Z) to spherical polar coordinates
     % (radius, polar, azimuth).

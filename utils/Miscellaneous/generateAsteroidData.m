@@ -1,5 +1,5 @@
 function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, options)
-    % generateAsteroidData - Generates asteroid data structure from STL file
+    % generateAsteroidData - Generate asteroid data structure from STL file
     % 
     % This function reads an ascii STL file representing the shape of an
     % asteroid and computes various physical properties such as diameter,
