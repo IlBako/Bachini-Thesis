@@ -4,11 +4,11 @@ function [mesh, data] = readStl(fname)
     % mesh = readStl(fname)
     %
     % Inputs:
-    %   fname:  Name of the stl file
+    %   fname:  (string) Path to the stl file
     %
     % Outputs:
-    %   mesh:   Struct containing the list of all the vertices, faces and edges
-    %   data: 
+    %   mesh:   (struct) Struct containing the list of all the vertices, faces and edges
+    %   data:   (struct) Struct containing additional mesh data (volume, center)
 
     arguments
         fname {mustBeFile} % Filepath of the .stl file

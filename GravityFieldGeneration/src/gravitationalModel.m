@@ -1,19 +1,29 @@
 function [U, dU, ddU] = gravitationalModel(meshData, fieldPoint, density, G)
-    % gravitationalModel - Function to compute the polyhedral gravity model
-    % in a field point
+    % gravitationalModel - Compute the gravitational model at a field point
     %
-    % [U, dU, ddU, laplacian] = gravitationalModel(meshData, fieldPoint, density, G)
+    % This function computes the gravitational potential, its gradient,
+    % and its Hessian at a specified field point given the asteroid's mesh data.
+    %
+    % [U, dU, ddU] = gravitationalModel(meshData, fieldPoint, density, G)
     %
     % Inputs:
-    %   meshData: 
-    %   fieldPoint:      
-    %   density:
-    %   G:
+    %   meshData:           (struct) Structure containing the asteroid's mesh data
+    %       .edgeList:      (cell array) List of mesh's edges
+    %       .faceList:      (cell array) List of mesh's edges
+    %   fieldPoint:         [3x1] (double) Coordinates of the field point [x; y; z]
+    %   density:            (double) Density of the asteroid [kg/m^3]
+    %   G:                  (double) Gravitational constant [N m^2/kg^2] (default: 6.67430e-11)
     % 
     % Outputs:
-    %   U:
-    %   dU:
-    %   ddU:
+    %   U:             (double) Gravitational potential at the field point [m^s/s^2]
+    %   dU:            (3x1 double) Gradient of the gravitational potential at the field point [m/s^2]
+    %   ddU:           (3x3 double) Hessian of the gravitational potential at the field point [1/s^2]
+    
+    % References:
+    %   [1] Werner, Robert & Scheeres, D.. (1996). 
+    %       Exterior Gravitation of a Polyhedron Derived and Compared with Harmonic and Mascon Gravitation 
+    %       Representations of Asteroid 4769 Castalia. Celestial Mechanics and Dynamical Astronomy. 
+    %       65. 313-344. 10.1007/BF00053511. 
 
     arguments
         meshData    (1,1)   struct
