@@ -41,7 +41,7 @@ end
 %% 
 
 figure; hold on; grid on; axis equal;
-levelPlot(X, Y, Z, gravStruct.gravAttNorm, 'xy', 0, 'nContours', 30, 'meshData', asteroidData.mesh, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
+levelPlot(coords, gravStruct.gravAttNorm, 'xy', 0, 'nContours', 30, 'meshData', asteroidData.mesh, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
 
 %%
 
