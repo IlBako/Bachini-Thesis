@@ -46,4 +46,4 @@ levelPlot(coords, gravStruct.gravAttNorm, 'xy', 0, 'nContours', 30, 'meshData', 
 %%
 
 figure; hold on; grid on; axis equal;
-contourPlot(asteroidData.gridSize, 100, gravInterpDict("attraction norm"), 'xy', 0, 'nContours', 30, 'meshData', asteroidData.mesh, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
+contourPlot(asteroidData.gridSize, 100, gravInterpDict("attraction norm"), 'xy', 0, coords.type, 'nContours', 30, 'meshData', asteroidData.mesh, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
