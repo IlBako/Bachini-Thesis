@@ -24,14 +24,23 @@ function drawMesh(meshData, center, drawFaces, drawFacesNormal, drawCenter, draw
     end
 
     if drawFaces
-        for ii = 1:length(meshData.faceList)
-            fill3(meshData.faceList{ii}.vertices(1,:), ...
-                meshData.faceList{ii}.vertices(2,:), ...
-                meshData.faceList{ii}.vertices(3,:), 'cyan', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
 
-            if drawFacesNormal
-                vec = [meshData.faceList{ii}.center ...
-                    meshData.faceList{ii}.center + meshData.faceList{ii}.normal];
+        faceList = meshData.faceList;
+        numFaces = length(faceList);
+        T = zeros(numFaces, 3);
+
+        for ii = 1:numFaces
+            T(ii, :) = faceList{ii}.idxVerts;
+        end
+
+        h = trimesh(T, meshData.vertexList(:,1), meshData.vertexList(:,2), meshData.vertexList(:,3), ...
+            "FaceColor", "cyan", "FaceAlpha", '0.25', "EdgeColor", "black", 'HandleVisibility', 'off');
+        h.CData = [];
+
+        if drawFacesNormal
+            for ii = 1:numFaces
+                vec = [faceList{ii}.center ...
+                    faceList{ii}.center + faceList{ii}.normal];
                 line(vec(1,:), vec(2,:), vec(3,:), 'Color', 'g', 'LineWidth', 1);
             end
         end
