@@ -12,16 +12,16 @@ asteroidData = generateAsteroidData("Kleopatra", "Z", "X", 4.64e18, "filename", 
 %% Draw mesh
 
 if false
-figure; hold on; view(20,30);
-axis equal; grid on;
-xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
+    figure; hold on; view(20,30);
+    axis equal; grid on;
+    xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
 
-drawMesh(asteroidData.mesh);
+    drawMesh(asteroidData.mesh);
 end
 
 %% Gravitational model
 
-NPoints = 25;
+NPoints = 50;
 coords = generatePointGrid(asteroidData.gridSize, "radial", NPoints, min(vecnorm(asteroidData.mesh.vertexList, 2, 2)));
 tic
 [gravStruct, gravInterpDict] = generateGravitationalMatrix(asteroidData, coords, "useParallel", true, "useLaplacian", true, "reshape", true, "interpVal", "all");
@@ -38,7 +38,8 @@ switch coords.type
         error("Unsupported coordinate type: %s", coords.type);
 end
 
-%% 
+
+%%
 
 figure; hold on; grid on; axis equal;
 levelPlot(coords, gravStruct.gravAttNorm, 'xy', 0, 'nContours', 30, 'meshData', asteroidData.mesh, 'colorbarLabel', "$\Vert \nabla U \Vert$ $[m\ s^{-2}]$");
