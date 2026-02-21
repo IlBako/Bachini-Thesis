@@ -9,13 +9,17 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     % asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, options)
     %
     % Inputs:
-    %   name:               (string) Name of the asteroid
-    %   maxIAxis:           (string) Axis corresponding to maximum inertia ("X", "Y", or "Z")
-    %   minIAxis:           (string) Axis corresponding to minimum inertia ("X", "Y", or "Z")
-    %   mass:               (double) Mass of the asteroid (must be positive)
-    %   options:            (struct) Optional parameters:
-    %       .filename       (string) Path to the STL file (default: name + ".stl")
-    %       .diameterTol    (double) Tolerance for diameter computation (default: 1e-3)
+    %   name:               (string)  Name of the asteroid
+    %   maxIAxis:           (string)  Axis corresponding to maximum inertia ("X", "Y", or "Z")
+    %   minIAxis:           (string)  Axis corresponding to minimum inertia ("X", "Y", or "Z")
+    %   mass:               (double)  Mass of the asteroid (must be positive)
+    %   options:            (struct)  Optional parameters:
+    %       .filename       (string)  Path to the STL file (default: name + ".stl")
+    %       .diameterTol    (double)  Tolerance for diameter computation (default: 1e-3)
+    %       .BVH            (logical) True if a Bounding Volume Hierarchy (BVH) using
+    %                                   Axis-Aligned Bounding Box (AABB) is generated 
+    %                                   for the mesh (default: true)
+    %       .maxLeafSize    (double)  Max number of triangles per leaf node (default: 8)
     %
     % Outputs:
     %   asteroidData:       (struct) Structure containing asteroid properties:
@@ -29,6 +33,7 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     %       .Dp             (double) Diameter along maximum inertia axis
     %       .De             (double) Diameter along minimum inertia axis
     %       .inertia        (double) Principal moments of inertia [Ix, Iy, Iz]
+    %       .BVH            (struct) Struct with flat arrays for BVH
 
     arguments
         name                (1,1) string
@@ -38,6 +43,8 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
 
         options.filename    (1,1) string {mustBeFile} = name + ".stl"
         options.diameterTol (1,1) double = 1e-3
+        options.BVH         (1,1) logical = true
+        options.maxLeafSize (1,1) double = 8
     end
     
     [meshData, data] = readStl(options.filename);
@@ -62,6 +69,14 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     Iy = m * sum(meshData.vertexList(:, 1).^2 + meshData.vertexList(:, 3).^2);
     Iz = m * sum(meshData.vertexList(:, 1).^2 + meshData.vertexList(:, 2).^2);
 
+    %% Build AABB Tree
+
+    if options.BVH
+        BVH = buildBVH(meshData, options.maxLeafSize);
+    else
+        BVH = [];
+    end
+
     %% Set asteroid data
     asteroidData.name = name;                   % Name of the asteroid
     asteroidData.mass = mass;                   % Mass of the asteroid
@@ -73,7 +88,7 @@ function asteroidData = generateAsteroidData(name, maxIAxis, minIAxis, mass, opt
     asteroidData.Dp = Dp;                       % Diameter along maximum inertia axis   
     asteroidData.De = De;                       % Diameter along minimum inertia axis
     asteroidData.inertia = [Ix Iy Iz];          % Principal moments of inertia [Ix, Iy, Iz]
-
+    asteroidData.BVH = BVH;                     % Bounding Volume Hierarchy 
 
 end
 
