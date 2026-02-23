@@ -29,9 +29,6 @@ gravLaplace = Simulink.Parameter(gravStruct.gravLaplace);
 gravLaplace.CoderInfo.StorageClass = 'Auto';
 gravLaplace.CoderInfo.CustomStorageClass = "Default";
 
-params.R_A = asteroidData.De/2;
-params.mu_sun = 1.32712440017987E+20;
-
 modelName = "ARIES";
 if ~bdIsLoaded(modelName)
     load_system(modelName);
@@ -41,12 +38,12 @@ createBVHObjects(modelName, asteroidData.BVH);
 %%
 
 tic
-simOut = sim(modelName, 'SimulationMode', 'rapid-accelerator');
+simOut = sim(modelName, 'SimulationMode', 'accelerator');
 toc
 % tic
 % simOut = sim(modelName,'SimulationMode','normal');
 % toc
-return
+
 % if simOut.time(end) < configs.sim.Tf
 %     disp("Simulation finished early!");
 % end
@@ -59,23 +56,25 @@ return
 % params.I_sc = configs.sc.I_mat;
 % params.I_inv = configs.sc.I_inv;
 % params.m_sc = configs.sc.m_sc;
-% 
+%
 % tic
 % [T, Y] = ode45(@(t,y) ARIES_odeFcn(t,y,F,params), [0 configs.sim.Tf], Y0, opts);
 % toc
 
 %% Plot results
-if false
-figure; hold on; view(20,30);
-axis equal; grid on;
-xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
-meshData = asteroidData.mesh;
-meshData.vertexList = meshData.vertexList./1e3;
-drawMesh(meshData);
-plot3(simOut.SCState.position.Data(:,1)/1e3, simOut.SCState.position.Data(:,2)/1e3, simOut.SCState.position.Data(:,3)/1e3, 'LineWidth', 1);
-% scatter3(simOut.SCState.position.Data(end,1)/1e3, simOut.SCState.position.Data(end,2)/1e3, simOut.SCState.position.Data(end,3)/1e3, 50, 'r', 'filled');
-end
-%% 
+% if false
+    figure; hold on; view(20,30);
+    axis equal; grid on;
+    xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
+    meshData = asteroidData.mesh;
+    meshData.vertexList = meshData.vertexList./1e3;
+    drawMesh(meshData);
+    plot3(simOut.SCState.position.Data(:,1)/1e3, simOut.SCState.position.Data(:,2)/1e3, simOut.SCState.position.Data(:,3)/1e3, 'LineWidth', 1);
+    scatter3(simOut.SCState.position.Data(end,1)/1e3, simOut.SCState.position.Data(end,2)/1e3, simOut.SCState.position.Data(end,3)/1e3, 50, 'r', 'filled');
+% end
+
+return
+%%
 
 r_B_I = simOut.AsteroidState.position.Data;
 R_B_I = r_B_I./vecnorm(r_B_I, 2, 2);
@@ -99,8 +98,8 @@ if size(idxRising) ~= size(idxFalling)
     error("Size mismatch");
 end
 idxs = [1 idxRising(1);
-        idxFalling(1) idxRising(2);
-        idxFalling(2) length(simOut.illuminated.Data)];
+    idxFalling(1) idxRising(2);
+    idxFalling(2) length(simOut.illuminated.Data)];
 
 figure; hold on; view(20,30);
 axis equal; grid on;

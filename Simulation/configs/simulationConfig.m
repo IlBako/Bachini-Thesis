@@ -1,9 +1,36 @@
 
-% configs.sim.rS0 = [1.5e5 0 0];
+
+% Tests
+% configs.sim.rS0 = [0 120e3 0];
 % configs.sim.rS0 = [120e3 0 0];
 % configs.sim.vS0 = [0 -100 0];
-configs.sim.rS0 = [112.2124e3 0 0];
-configs.sim.vS0 = [1.0784 -99 -100];
+% configs.sim.rS0 = [112.2124e3 0 0];
+% configs.sim.vS0 = [1.0784 -99 -100];
+
+% X-Y orbit (a = 120km, e = 0, i = 0, OM = 0, om = 0, theta = 0)
+% Y-Z orbit (a = 40km, e = 0, i = 90, OM = 90, om = 0, theta = 0)
+a_target = 40e3;
+e_target = 0;
+i_target = deg2rad(90);
+OM_target = deg2rad(90);
+om_target = 0;
+configs.control.mu = 6.67430*1e-11*asteroidData.mass;
+configs.control.kep_target = [a_target, e_target, i_target, OM_target, om_target];
+configs.control.h_target = sqrt(configs.control.mu*120e3*(1-0^2))*...
+                            [sin(i_target)*sin(OM_target); -sin(i_target)*cos(OM_target); cos(i_target)];
+configs.control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*sin(om_target)*cos(i_target);
+                                     sin(OM_target)*cos(om_target) + cos(OM_target)*sin(om_target)*cos(i_target);
+                                     sin(om_target)*sin(i_target)];
+configs.control.lambdaR = 2;
+configs.control.lambdaN = 2;
+configs.control.K = 1e-2*eye(3);
+configs.control.phi = 5*diag(configs.control.K);
+[rr0, vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, 0, configs.control.mu);
+configs.sim.rS0 = rr0;
+configs.sim.vS0 = vv0;
+
+clear a_target e_target i_target OM_target om_target
+
 configs.sim.q0 = [1 0 0 0];
 configs.sim.w0 = [0 0 0];
 configs.sim.rB0 = [9.317464358520074*1e10 3.097354857658076*1e11 -4.604296964939199*1e10];
@@ -11,6 +38,9 @@ configs.sim.vB0 = [-2.008619498700183*1e4 8.505798212350415*1e3 -4.3486148829946
 configs.grav.laplaceTol = 1e-6;
 configs.sim.Tf = 2e5;
 % configs.sim.Tf = 1.5e8;
+
+
+configs.env.mu_sun = 1.32712440017987E+20;
 
 configs.asteroid.wb = [0;0;3.3118e-4];
 

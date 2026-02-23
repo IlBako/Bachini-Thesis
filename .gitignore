@@ -2,5 +2,13 @@ AsteroidModels/tests/
 AsteroidModels/OBJs/
 */slprj/
 
+OLD/
+GravityData/
+Other/
+
+*/*_ert_rtw/
+
 *.asv
 *.mat
+*.slxc
+*.mexw64
