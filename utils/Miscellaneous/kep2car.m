@@ -3,8 +3,8 @@ function [rr, vv] = kep2car(varargin)
 % Transformation from orbital elements to Cartesian state 
 % given n theta angles
 %
-% [rr, vv] = parorb2rv(a, e, i, OM, om, theta, mu)
-% [rr, vv] = parorb2rv([a, e, i, OM, om, theta, mu])
+% [rr, vv] = kep2car(a, e, i, OM, om, theta, mu)
+% [rr, vv] = kep2car([a, e, i, OM, om, theta, mu])
 %
 % This function accepts both array of elements and elements
 %
