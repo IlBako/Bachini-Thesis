@@ -1,44 +1,43 @@
 % Main script to run the ARIES simulator
 % (ARIES: Asteroid-centered Relative Inertial and Environmental Simulator)
 
-clc; clearvars; close all;
-addpath(genpath("..\Utils"))
-addpath("configs\");
-addpath("Subsystems\");
+clc; close all; clearvars -except isProjectLoaded
 
-%% Load data
+options.reloadProject = false;
 
-load("..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat");
+%% Initialization
+% persistent isProjectLoaded
+if ~exist("isProjectLoaded", 'var'), isProjectLoaded = false; end
 
-if ~isfield(asteroidData, 'BVH') || isempty(asteroidData.BVH)
-    asteroidData.BVH = buildBVH(asteroidData.mesh, 8);
+if ~isProjectLoaded || options.reloadProject
+    repoRoot = fileparts(mfilename('fullpath'));
+    addpath(genpath("..\Utils"))
+    isProjectLoaded = true;
 end
 
-%% Load configs
+%% Data loading
 
-simulationConfig;
-Bus_objects();
+gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
+environment = environmentConfig(gravDataPath);
+[control, spacecraft] = controlConfig(environment.asteroidMu);
+init = initConditionConfig(control);
+simulation = simulationConfig();
 
-%% Run simulation
-
-gravAtt = Simulink.Parameter(gravStruct.gravAtt);
+gravAtt = Simulink.Parameter(environment.gravStruct.gravAtt);
 gravAtt.CoderInfo.StorageClass = 'Auto';
 gravAtt.CoderInfo.CustomStorageClass = "Default";
-
-gravLaplace = Simulink.Parameter(gravStruct.gravLaplace);
+gravLaplace = Simulink.Parameter(environment.gravStruct.gravLaplace);
 gravLaplace.CoderInfo.StorageClass = 'Auto';
 gravLaplace.CoderInfo.CustomStorageClass = "Default";
 
-modelName = "ARIES";
-if ~bdIsLoaded(modelName)
-    load_system(modelName);
-end
+%% Model initialization
 
-createBVHObjects(modelName, asteroidData.BVH);
+model = modelInitializer(environment, control, spacecraft, init, simulation);
+
 %%
 
 tic
-simOut = sim(modelName, 'SimulationMode', 'accelerator');
+simOut = sim(model);
 toc
 % tic
 % simOut = sim(modelName,'SimulationMode','normal');
@@ -62,16 +61,48 @@ toc
 % toc
 
 %% Plot results
-% if false
+if true
     figure; hold on; view(20,30);
     axis equal; grid on;
     xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
-    meshData = asteroidData.mesh;
+    meshData = environment.asteroidData.mesh;
     meshData.vertexList = meshData.vertexList./1e3;
     drawMesh(meshData);
     plot3(simOut.SCState.position.Data(:,1)/1e3, simOut.SCState.position.Data(:,2)/1e3, simOut.SCState.position.Data(:,3)/1e3, 'LineWidth', 1);
     scatter3(simOut.SCState.position.Data(end,1)/1e3, simOut.SCState.position.Data(end,2)/1e3, simOut.SCState.position.Data(end,3)/1e3, 50, 'r', 'filled');
-% end
+end
+
+%%
+
+figure; hold on; grid on;
+plot(simOut.SCState.position.Time, vecnorm(simOut.SCState.position.Data,2,2)/1e3)
+title("$\mu="+num2str(mean(vecnorm(simOut.SCState.position.Data,2,2))/1e3)+"\ km$, $\sigma="+num2str(std(vecnorm(simOut.SCState.position.Data,2,2)))+"\ m$", 'Interpreter', 'latex')
+
+figure; hold on; grid on;
+plot(simOut.control_surface.Time, simOut.control_surface.Data);
+
+figure; hold on; grid on;
+plot(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
+
+return
+
+%%
+
+accGravNorm = nan(length(simOut.SCState.position.Time),1);
+pos = simOut.SCState.position.Data;
+gravAccNorm = gravInterpDict("attraction norm");
+
+for ii = 1:length(accGravNorm)
+    [R, polar, azimuth] = cart2Sphere(pos(ii,1), pos(ii,2), pos(ii,3));
+    accGravNorm(ii) = gravAccNorm(R, polar, azimuth);
+end
+
+T_pos = simOut.SCState.position.Time;
+accControl = interp1(simOut.controlAcc.Time, squeeze(simOut.controlAcc.Data)', T_pos, "previous");
+
+figure; hold on; grid on;
+plot(T_pos, vecnorm(accControl, 2, 2));
+plot(T_pos, accGravNorm);
 
 return
 %%
