@@ -2,51 +2,6 @@ function [control, spacecraft] = controlConfig(asteroidMu)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                CONFIGURATION FILE FOR CONTROL PARAMETERS                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Orbit keeping algorithm
-
-control.frequency = 1;  % [Hz] frequency of command block
-
-% X-Y orbit (a = 120km, e = 0, i = 0, OM = 0, om = 0, theta = 0)
-
-% Y-Z orbit (a = 40km, e = 0, i = 90, OM = 90, om = 0, theta = 0)
-
-% Test orbit from "3D plausible orbital stability close to asteroid (216)
-% Kleopatra" (a = 312.5km, e = 0.2, i = 180, OM = 0, om = 0, theta = 0) 
-% For test orbit: vS0 = [-6.05798274507417 -91.6645500432013 0.0329814808174932]
-
-% 2nd test orbit from "3D plausible orbital stability close to asteroid (216)
-% Kleopatra" (a = 200km, e = 0.3, i = 180, OM = 0, om = 0, theta = 0) 
-% For test orbit: vS0 = [0 -101.014522388756 0]
-
-% Target keplerian elements
-a_target = 350;
-e_target = 0.1;
-i_target = deg2rad(90);
-OM_target = deg2rad(90);
-om_target = deg2rad(90);
-theta_start = 0;
-
-control.kep_target = [a_target, e_target, i_target, OM_target, om_target];
-
-% Target orbit parameters (angular momentum and eccentricity)
-control.h_target = sqrt(asteroidMu*a_target*(1-e_target^2))*...
-                    [sin(i_target)*sin(OM_target); -sin(i_target)*cos(OM_target); cos(i_target)];
-control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*sin(om_target)*cos(i_target);
-                                     sin(OM_target)*cos(om_target) + cos(OM_target)*sin(om_target)*cos(i_target);
-                                     sin(om_target)*sin(i_target)];
-
-% Initial condition from keplerian orbit
-
-[control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
-
-% Control paramters of the SMC
-control.lambdaR = 250;
-control.lambdaN = 250;
-control.K = 1e-2*eye(3);
-control.phi = 25*diag(control.K);
-control.sPlus = 0;
-control.sMinus = -Inf;
-
 %% Spacecraft configs
 
 spacecraft.scMass = 600;
@@ -96,5 +51,62 @@ spacecraft.rPMat = [0     0   0.625;
                    -1.757 0   0;
                     1.757 0   0;
                     1.757 0   0];
+
+
+%% Orbit keeping algorithm
+
+control.frequency = 1;  % [Hz] frequency of command block
+
+% X-Y orbit (a = 120km, e = 0, i = 0, OM = 0, om = 0, theta = 0)
+
+% Y-Z orbit (a = 40km, e = 0, i = 90, OM = 90, om = 0, theta = 0)
+
+% Test orbit from "3D plausible orbital stability close to asteroid (216)
+% Kleopatra" (a = 312.5km, e = 0.2, i = 180, OM = 0, om = 0, theta = 0) 
+% For test orbit: vS0 = [-6.05798274507417 -91.6645500432013 0.0329814808174932]
+
+% 2nd test orbit from "3D plausible orbital stability close to asteroid (216)
+% Kleopatra" (a = 200km, e = 0.3, i = 180, OM = 0, om = 0, theta = 0) 
+% For test orbit: vS0 = [0 -101.014522388756 0]
+
+% Target keplerian elements
+a_target = 350;
+e_target = 0;
+i_target = deg2rad(45);
+OM_target = deg2rad(45);
+om_target = deg2rad(0);
+theta_start = 0;
+
+control.kep_target = [a_target, e_target, i_target, OM_target, om_target];
+
+% Target orbit parameters (angular momentum and eccentricity)
+control.h_target = sqrt(asteroidMu*a_target*(1-e_target^2))*...
+                    [sin(i_target)*sin(OM_target); -sin(i_target)*cos(OM_target); cos(i_target)];
+control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*sin(om_target)*cos(i_target);
+                                     sin(OM_target)*cos(om_target) + cos(OM_target)*sin(om_target)*cos(i_target);
+                                     sin(om_target)*sin(i_target)];
+
+% Initial condition from keplerian orbit
+
+[control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
+
+% Control paramters of the SMC
+control.lambdaR = 2;
+control.lambdaN = 2;
+control.K = 1e-2*eye(3);
+control.phi = 5*diag(control.K);
+control.sPlus = 0;
+control.sMinus = -Inf;
+
+%% Attitude control
+
+% control.kq = 0.267; % Nm
+% control.kw = 17;   % Nms
+% control.phiQuat = 0.3;
+
+% Starting value of kw: max(diag(spacecraft.I_mat))/min(diag(spacecraft.I_mat))*ones(1,3)
+
+control.kw = 1*max(diag(spacecraft.I_mat))/min(diag(spacecraft.I_mat))*ones(1,3);
+control.katt = 2e-3*diag(spacecraft.I_mat) .* [1 1 1]';
 
 end

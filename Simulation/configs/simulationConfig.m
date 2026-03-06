@@ -5,7 +5,7 @@ function simulation = simulationConfig()
 
 %% Simulation execution setup
 simulation.modelName                       = 'ARIES';
-simulation.simulationTime                  = '2e5';               % [s] min = 65s
+simulation.simulationTime                  = '5e4';               % [s] 
 simulation.simulationTimeStep              = '1e-1';              % [s] simulation integration timestep (fixed step solvers)
 simulation.solver                          = 'ode4';              % solver algorithm: 'ode4', 'ode45', 'ode15s', etc.
 simulation.solverType                      = 'fixed-step';        % 'fixed-step' or 'variable-step'
@@ -15,5 +15,6 @@ simulation.debugMode                       = 'off';               % 'on', 'off'
 
 %% Model variants setup
 simulation.variants.control                = controlVariant.ORBIT_KEEPING;
+simulation.variants.attTarget              = attitudeTarget.INERTIAL;
 
 end

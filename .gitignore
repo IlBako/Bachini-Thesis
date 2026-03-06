@@ -8,6 +8,7 @@ Other/
 
 */*_ert_rtw/
 
+*.fig
 *.asv
 *.mat
 *.slxc

@@ -7,7 +7,7 @@ environment.gravLaplaceTol                  = 1e-6; % Tollerance of the error on
 environment.mu_sun = 1.32712440017987E+20;
 
 %% Asteroid
-environment.asteroidAngularVelocity = [0;0;1.4386e-4];
+environment.asteroidAngularVelocity = [0;0;4.0684e-4];
 
 gravData = load(gravDataPath);
 

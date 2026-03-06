@@ -12,12 +12,13 @@ if ~exist("isProjectLoaded", 'var'), isProjectLoaded = false; end
 if ~isProjectLoaded || options.reloadProject
     repoRoot = fileparts(mfilename('fullpath'));
     addpath(genpath("..\Utils"))
+    proj = openProject("ARIES.prj");
     isProjectLoaded = true;
 end
 
 %% Data loading
 
-gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
+gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 environment = environmentConfig(gravDataPath);
 [control, spacecraft] = controlConfig(environment.asteroidMu);
 init = initConditionConfig(control);
@@ -34,11 +35,12 @@ gravLaplace.CoderInfo.CustomStorageClass = "Default";
 
 model = modelInitializer(environment, control, spacecraft, init, simulation);
 
-%%
+%% Run simulation
 
 tic
 simOut = sim(model);
 toc
+
 % tic
 % simOut = sim(modelName,'SimulationMode','normal');
 % toc
@@ -59,17 +61,18 @@ toc
 % tic
 % [T, Y] = ode45(@(t,y) ARIES_odeFcn(t,y,F,params), [0 configs.sim.Tf], Y0, opts);
 % toc
-
+%%
+if false
 %% Plot results
 if true
     figure; hold on; view(20,30);
     axis equal; grid on;
     xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
     meshData = environment.asteroidData.mesh;
-    meshData.vertexList = meshData.vertexList./1e3;
+    % meshData.vertexList = meshData.vertexList./1e3;
     drawMesh(meshData);
-    plot3(simOut.SCState.position.Data(:,1)/1e3, simOut.SCState.position.Data(:,2)/1e3, simOut.SCState.position.Data(:,3)/1e3, 'LineWidth', 1);
-    scatter3(simOut.SCState.position.Data(end,1)/1e3, simOut.SCState.position.Data(end,2)/1e3, simOut.SCState.position.Data(end,3)/1e3, 50, 'r', 'filled');
+    plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1);
+    scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled');
 end
 
 %%
@@ -84,8 +87,37 @@ plot(simOut.control_surface.Time, simOut.control_surface.Data);
 figure; hold on; grid on;
 plot(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
 
+
+%%
+
+semiMajAxis = nan(length(simOut.SCState.position.Time),1);
+rad = vecnorm(simOut.SCState.position.Data,2,2);
+vel = vecnorm(simOut.SCState.velocity.Data,2,2);
+
+for ii = 1:length(semiMajAxis)
+    E = vel(ii)^2/2 - environment.asteroidMu/rad(ii);
+    semiMajAxis(ii) = -environment.asteroidMu/(2*E);
+end
+
+figure; hold on; grid on;
+plot(simOut.SCState.position.Time, semiMajAxis);
+title("$\mu="+num2str(mean(semiMajAxis))+"\ m$, $\sigma="+num2str(std(semiMajAxis))+"\ m$", 'Interpreter', 'latex')
+
+
+figure; hold on; grid on;
+plot(simOut.currentEcc.Time, vecnorm(simOut.currentEcc.Data,2,2));
+title("$\mu="+num2str(mean(vecnorm(simOut.currentEcc.Data,2,2)))+"$, $\sigma="+num2str(std(vecnorm(simOut.currentEcc.Data,2,2)))+"$", 'Interpreter', 'latex')
+
 return
 
+%%
+
+figure; hold on; grid on;
+% plot(simOut.gravAttraction.Time, vecnorm(simOut.gravAttraction.Data,2,2));
+plot(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
+
+
+return
 %%
 
 accGravNorm = nan(length(simOut.SCState.position.Time),1);
@@ -148,11 +180,19 @@ end
 return
 
 %%
+
+T_tau = simOut.SRPTau.Time;
+ill_interp = logical(interp1(simOut.illuminated.Time, double(simOut.illuminated.Data), T_tau, 'previous'));
+tau = vecnorm(simOut.SRPTau.Data,2,2);
+tau(~ill_interp) = nan;
+
 figure; hold on; grid on;
 % plot(simOut.gravAttraction.Time, vecnorm(simOut.gravAttraction.Data,2,2));
-plot(simOut.TBPAcc.Time, vecnorm(simOut.TBPAcc.Data,2,2));
-plot(simOut.SRPTau.Time(simOut.illuminated.Data), vecnorm(simOut.SRPTau.Data(simOut.illuminated.Data,:),2,2));
-% plot(simOut.SRPAcc.Time, vecnorm(simOut.SRPAcc.Data,2,2));
+% plot(simOut.TBPAcc.Time, vecnorm(simOut.TBPAcc.Data,2,2));
+% plot(simOut.SRPTau.Time(ill_interp), vecnorm(simOut.SRPTau.Data(ill_interp,:),2,2), 'LineWidth', 2);
+plot(simOut.SRPTau.Time(), tau, 'LineWidth', 2);
+plot(simOut.SRPTau.Time(), vecnorm(simOut.SRPTau.Data(),2,2));
+% plot(simOut.SRPAcc.Time(simOut.illuminated.Data), vecnorm(simOut.SRPAcc.Data(simOut.illuminated.Data,:),2,2));
 
 %%
 
@@ -165,3 +205,164 @@ meshData = asteroidData.mesh;
 meshData.vertexList = meshData.vertexList./1e3;
 drawMesh(meshData);
 plot3(r_S(:,1)/1e3, r_S(:,2)/1e3, r_S(:,3)/1e3, 'LineWidth', 1);
+end
+%%
+
+warning("Most of the 'To Workspace' have been disabled to save space!");
+
+strcase = "q0_1000__w0_wb__kw_1__ka_2_illcheck";
+folder = "results\att_tuning\testing\" + strcase;
+mkdir(folder);
+
+T_short = simOut.time(1):simOut.time(end);
+q_SB = interp1(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data, T_short);
+q_target = interp1(simOut.q_target.Time, simOut.q_target.Data, T_short);
+
+toSave = struct();
+toSave.T_short = T_short;
+toSave.q_SB = q_SB;
+toSave.q_target = q_target;
+
+figure; 
+tiledlayout(2,2);
+nexttile
+plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 1));
+title("$q_w$", 'Interpreter','latex')
+nexttile
+plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 2));
+title("$q_x$", 'Interpreter','latex')
+nexttile
+plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 3));
+title("$q_y$", 'Interpreter','latex')
+nexttile
+plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 4));
+title("$q_z$", 'Interpreter','latex')
+savefig(folder + filesep + "q_SB.fig");
+
+figure; 
+tiledlayout(2,2);
+nexttile
+plot(simOut.q_target.Time, simOut.q_target.Data(:, 1));
+title("$q_{t,w}$", 'Interpreter','latex')
+nexttile
+plot(simOut.q_target.Time, simOut.q_target.Data(:, 2));
+title("$q_{t,x}$", 'Interpreter','latex')
+nexttile
+plot(simOut.q_target.Time, simOut.q_target.Data(:, 3));
+title("$q_{t,y}$", 'Interpreter','latex')
+nexttile
+plot(simOut.q_target.Time, simOut.q_target.Data(:, 4));
+title("$q_{t,z}$", 'Interpreter','latex')
+savefig(folder + filesep + "q_target.fig");
+
+figure; 
+tiledlayout(2,2);
+nexttile
+plot(T_short, q_SB(:, 1) - q_target(:, 1));
+title("$q_{diff,w}$", 'Interpreter','latex')
+nexttile
+plot(T_short, q_SB(:, 2) - q_target(:, 2));
+title("$q_{diff,x}$", 'Interpreter','latex')
+nexttile
+plot(T_short, q_SB(:, 3) - q_target(:, 3));
+title("$q_{diff,y}$", 'Interpreter','latex')
+nexttile
+plot(T_short, q_SB(:, 4) - q_target(:, 4));
+title("$q_{diff,z}$", 'Interpreter','latex')
+savefig(folder + filesep + "q_diff.fig");
+
+%%
+
+euls = rad2deg(unwrap(quat2eul(simOut.SCState.q_SB.Data)));
+
+figure; 
+tiledlayout(3,1);
+nexttile
+plot(simOut.SCState.q_SB.Time, euls(:, 1));
+title("Yaw", 'Interpreter','latex')
+nexttile
+plot(simOut.SCState.q_SB.Time, euls(:, 2));
+title("Pitch", 'Interpreter','latex')
+nexttile
+plot(simOut.SCState.q_SB.Time, euls(:, 3));
+title("Roll", 'Interpreter','latex')
+savefig(folder + filesep + "euls.fig");
+
+%%
+
+if ~exist("T_short", 'var')
+    T_short = simOut.time(1):simOut.time(end);
+    toSave.T_short = T_short;
+end
+controlTau = interp1(simOut.controlTau.Time, simOut.controlTau.Data, T_short);
+toSave.controlTau = controlTau;
+
+figure; 
+tiledlayout(3,1);
+nexttile
+plot(simOut.controlTau.Time, simOut.controlTau.Data(:,1));
+title("$\tau_x$", 'Interpreter', 'latex');
+nexttile
+plot(simOut.controlTau.Time, simOut.controlTau.Data(:,2));
+title("$\tau_y$", 'Interpreter', 'latex');
+nexttile
+plot(simOut.controlTau.Time, simOut.controlTau.Data(:,3));
+title("$\tau_z$", 'Interpreter', 'latex');
+savefig(folder + filesep + "controlTau.fig");
+
+%%
+
+if ~exist("T_short", 'var')
+    T_short = simOut.time(1):simOut.time(end);
+    toSave.T_short = T_short;
+end
+angVel = interp1(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data, T_short);
+w_target = interp1(simOut.w_target.Time, simOut.w_target.Data, T_short);
+toSave.angVel = angVel;
+toSave.w_target = w_target;
+
+figure; 
+tiledlayout(3,1);
+nexttile; hold on; grid on;
+plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 1));
+title("$\omega_x$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 2));
+title("$\omega_y$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 3));
+title("$\omega_z$", 'Interpreter','latex')
+savefig(folder + filesep + "angVel.fig");
+
+figure; 
+tiledlayout(3,1);
+nexttile; hold on; grid on;
+plot(simOut.w_target.Time, simOut.w_target.Data(:, 1));
+title("$\omega_{t,x}$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(simOut.w_target.Time, simOut.w_target.Data(:, 2));
+title("$\omega_{t,y}$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(simOut.w_target.Time, simOut.w_target.Data(:, 3));
+title("$\omega_{t,z}$", 'Interpreter','latex')
+savefig(folder + filesep + "wTarget.fig");
+
+figure; 
+tiledlayout(3,1);
+nexttile; hold on; grid on;
+plot(T_short, (angVel(:, 1) - w_target(:, 1)));%./simOut.w_target.Data(:,1)*100);
+% ylim([-200 200])
+title("$\omega_{e,x}$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(T_short, (angVel(:, 2) - w_target(:, 2)));%./simOut.w_target.Data(:,2)*100);
+% ylim([-200 200])
+title("$\omega_{e,y}$", 'Interpreter','latex')
+nexttile; hold on; grid on;
+plot(T_short, (angVel(:, 3) - w_target(:, 3)));%./simOut.w_target.Data(:,3)*100);
+% ylim([-200 200])
+title("$\omega_{e,z}$", 'Interpreter','latex')
+% savefig(folder + filesep + "we.fig");
+
+%%
+
+save(folder + filesep + "data.mat", "toSave", "control", "init")
