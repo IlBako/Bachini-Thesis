@@ -6,7 +6,7 @@ clc; close all; clearvars -except isProjectLoaded
 options.reloadProject = false;
 
 %% Initialization
-% persistent isProjectLoaded
+
 if ~exist("isProjectLoaded", 'var'), isProjectLoaded = false; end
 
 if ~isProjectLoaded || options.reloadProject
@@ -20,6 +20,7 @@ end
 
 gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 environment = environmentConfig(gravDataPath);
+actuators = actuatorsConfig();
 [control, spacecraft] = controlConfig(environment.asteroidMu);
 init = initConditionConfig(control);
 simulation = simulationConfig();
@@ -33,7 +34,7 @@ gravLaplace.CoderInfo.CustomStorageClass = "Default";
 
 %% Model initialization
 
-model = modelInitializer(environment, control, spacecraft, init, simulation);
+model = modelInitializer(environment, actuators, control, spacecraft, init, simulation);
 
 %% Run simulation
 
@@ -62,7 +63,7 @@ toc
 % [T, Y] = ode45(@(t,y) ARIES_odeFcn(t,y,F,params), [0 configs.sim.Tf], Y0, opts);
 % toc
 %%
-if false
+if true
 %% Plot results
 if true
     figure; hold on; view(20,30);
@@ -108,7 +109,7 @@ figure; hold on; grid on;
 plot(simOut.currentEcc.Time, vecnorm(simOut.currentEcc.Data,2,2));
 title("$\mu="+num2str(mean(vecnorm(simOut.currentEcc.Data,2,2)))+"$, $\sigma="+num2str(std(vecnorm(simOut.currentEcc.Data,2,2)))+"$", 'Interpreter', 'latex')
 
-return
+
 
 %%
 
@@ -117,7 +118,7 @@ figure; hold on; grid on;
 plot(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
 
 
-return
+
 %%
 
 accGravNorm = nan(length(simOut.SCState.position.Time),1);
@@ -136,7 +137,7 @@ figure; hold on; grid on;
 plot(T_pos, vecnorm(accControl, 2, 2));
 plot(T_pos, accGravNorm);
 
-return
+
 %%
 
 r_B_I = simOut.AsteroidState.position.Data;
@@ -177,7 +178,7 @@ for ii = 1:min(length(idxRising),length(colors))
     plot3([0 R_B_B(idxs(ii, 1), 1)], [0 R_B_B(idxs(ii, 1), 2)], [0 R_B_B(idxs(ii, 1), 3)], "LineWidth", 3, 'Color', colors(ii));
 end
 
-return
+
 
 %%
 
@@ -208,9 +209,10 @@ plot3(r_S(:,1)/1e3, r_S(:,2)/1e3, r_S(:,3)/1e3, 'LineWidth', 1);
 end
 %%
 
-warning("Most of the 'To Workspace' have been disabled to save space!");
+% warning("Most of the 'To Workspace' have been disabled to save space!");
 
-strcase = "q0_1000__w0_wb__kw_1__ka_2_illcheck";
+% strcase = "q0_1000__w0_wb__kw_1__ka_2_illcheck";
+strcase = "bennu_testing_pre_rw";
 folder = "results\att_tuning\testing\" + strcase;
 mkdir(folder);
 
