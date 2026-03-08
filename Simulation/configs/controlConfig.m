@@ -69,6 +69,8 @@ control.frequency = 1;  % [Hz] frequency of command block
 % Kleopatra" (a = 200km, e = 0.3, i = 180, OM = 0, om = 0, theta = 0) 
 % For test orbit: vS0 = [0 -101.014522388756 0]
 
+% BENNU: (a = 350 m, e = 0, i = 45°, OM = 45°, om = 0°, theta = 0°)
+
 % Target keplerian elements
 a_target = 350;
 e_target = 0;
@@ -89,6 +91,9 @@ control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*si
 % Initial condition from keplerian orbit
 
 [control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
+
+% BENNU: lambda = [2, 2], K = 1e-2*eye(3), phi = 5
+% KLEOPATRA: lambda = [2, 2], K = 1e-3*eye(3), phi = 20
 
 % Control paramters of the SMC
 control.lambdaR = 2;

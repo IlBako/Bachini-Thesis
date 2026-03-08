@@ -18,6 +18,7 @@ end
 
 %% Data loading
 
+% gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
 gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
@@ -63,7 +64,7 @@ toc
 % [T, Y] = ode45(@(t,y) ARIES_odeFcn(t,y,F,params), [0 configs.sim.Tf], Y0, opts);
 % toc
 %%
-if true
+if false
 %% Plot results
 if true
     figure; hold on; view(20,30);
@@ -212,7 +213,7 @@ end
 % warning("Most of the 'To Workspace' have been disabled to save space!");
 
 % strcase = "q0_1000__w0_wb__kw_1__ka_2_illcheck";
-strcase = "bennu_testing_pre_rw";
+strcase = "bennu_testing_rw_desat";
 folder = "results\att_tuning\testing\" + strcase;
 mkdir(folder);
 

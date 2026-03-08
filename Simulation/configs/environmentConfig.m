@@ -7,7 +7,8 @@ environment.gravLaplaceTol                  = 1e-6; % Tollerance of the error on
 environment.mu_sun = 1.32712440017987E+20;
 
 %% Asteroid
-environment.asteroidAngularVelocity = [0;0;4.0684e-4];
+environment.asteroidAngularVelocity = [0;0;4.0684e-4]; % BENNU
+% environment.asteroidAngularVelocity = [0;0;3.3118e-4]; % KLEOPATRA
 
 gravData = load(gravDataPath);
 
