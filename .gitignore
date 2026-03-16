@@ -1,6 +1,7 @@
 AsteroidModels/tests/
 AsteroidModels/OBJs/
 */slprj/
+*/gfx/
 
 OLD/
 GravityData/
@@ -13,3 +14,4 @@ Other/
 *.mat
 *.slxc
 *.mexw64
+*.autosave

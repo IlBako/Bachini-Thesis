@@ -26,6 +26,6 @@ model = model.setVariable('init', init);
 model = model.setVariable('variants', simulation.variants);
 
 %% Assign BVH objects
-createBVHObjects(simulation.modelName, environment.asteroidBVH);
+createBVHObjects(simulation.modelName, environment.asteroidData.BVH);
 
 end

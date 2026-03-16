@@ -13,16 +13,14 @@ environment.asteroidAngularVelocity = [0;0;4.0684e-4]; % BENNU
 gravData = load(gravDataPath);
 
 if ~isfield(gravData.asteroidData, 'BVH') || isempty(gravData.asteroidData.BVH)
-    environment.asteroidBVH = buildBVH(gravData.asteroidData.mesh, 8);
-else
-    environment.asteroidBVH = gravData.asteroidData.BVH;
+    gravData.asteroidData.BVH = buildBVH(gravData.asteroidData.mesh, 8);
 end
 
 environment.asteroidData = gravData.asteroidData;
 environment.asteroidMu = 6.67430*1e-11*gravData.asteroidData.mass;
 environment.asteroidCoords = gravData.coords;
-environment.gravStruct = gravData.gravStruct;
-environment.gravInterpDict = gravData.gravInterpDict;
+environment.gravStruct = rmfield(gravData.gravStruct, {'gravGrad', 'gravPot', 'gravAttNorm'});
+% environment.gravInterpDict = gravData.gravInterpDict;
 
 if ~isfield(environment.asteroidCoords, 'radius')
     environment.asteroidCoords.radius = environment.asteroidCoords.R;

@@ -20,6 +20,7 @@ end
 
 % gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
 gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
+% gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
 environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
 [control, spacecraft] = controlConfig(environment.asteroidMu);
@@ -67,7 +68,7 @@ toc
 if false
 %% Plot results
 if true
-    figure; hold on; view(20,30);
+    f = figure; hold on; view(45,30);
     axis equal; grid on;
     xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
     meshData = environment.asteroidData.mesh;
@@ -75,6 +76,11 @@ if true
     drawMesh(meshData);
     plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1);
     scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled');
+    scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled');
+    legend("Trajectory", "End position", "Start position", 'Interpreter', 'latex', 'Location', 'northeast');
+    f = figureRefine(f, 0.48, 0);
+    savefig(f, "gfx/Bennu_OK/Bennu_3d_trajectory.fig");
+    exportgraphics(f, "gfx/Bennu_OK/Bennu_3d_trajectory.pdf", 'ContentType','vector');
 end
 
 %%
@@ -101,25 +107,35 @@ for ii = 1:length(semiMajAxis)
     semiMajAxis(ii) = -environment.asteroidMu/(2*E);
 end
 
-figure; hold on; grid on;
-plot(simOut.SCState.position.Time, semiMajAxis);
-title("$\mu="+num2str(mean(semiMajAxis))+"\ m$, $\sigma="+num2str(std(semiMajAxis))+"\ m$", 'Interpreter', 'latex')
+f = figure; hold on; grid on;
+plot(simOut.SCState.position.Time./86400, semiMajAxis);
+xlabel("Time $[day]$", 'Interpreter', 'latex');
+title({"Semi-major axis","$\mu_a = "+num2str(mean(semiMajAxis))+"\ m$, $\sigma_a = "+num2str(std(semiMajAxis))+"\ m$"}, 'Interpreter', 'latex')
+f = figureRefine(f, 0.48, 0);
+savefig(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.fig");
+exportgraphics(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.pdf", 'ContentType','vector');
 
-
-figure; hold on; grid on;
-plot(simOut.currentEcc.Time, vecnorm(simOut.currentEcc.Data,2,2));
-title("$\mu="+num2str(mean(vecnorm(simOut.currentEcc.Data,2,2)))+"$, $\sigma="+num2str(std(vecnorm(simOut.currentEcc.Data,2,2)))+"$", 'Interpreter', 'latex')
-
+f = figure; hold on; grid on;
+plot(simOut.currentEcc.Time./86400, vecnorm(simOut.currentEcc.Data,2,2));
+xlabel("Time $[day]$", 'Interpreter', 'latex');
+title({"Eccentricity","$\mu_e = "+num2str(mean(vecnorm(simOut.currentEcc.Data,2,2)))+"$, $\sigma_e = "+num2str(std(vecnorm(simOut.currentEcc.Data,2,2)))+"$"}, 'Interpreter', 'latex')
+f = figureRefine(f, 0.48, 0);
+savefig(f, "gfx/Bennu_OK_120/Bennu_ecc.fig");
+exportgraphics(f, "gfx/Bennu_OK_120/Bennu_ecc.pdf", 'ContentType','vector');
 
 
 %%
 
-figure; hold on; grid on;
-% plot(simOut.gravAttraction.Time, vecnorm(simOut.gravAttraction.Data,2,2));
-plot(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
+f = figure; hold on; grid on;
+plot(simOut.controlAcc.Time./86400, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
+xlabel("Time $[day]$", 'Interpreter', 'latex');
+ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
+title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+f = figureRefine(f, 0.7, 3);
+savefig(f, "gfx/Bennu_OK_120/Bennu_controlAcc.fig");
+exportgraphics(f, "gfx/Bennu_OK_120/Bennu_controlAcc.pdf", 'ContentType','vector');
 
-
-
+return
 %%
 
 accGravNorm = nan(length(simOut.SCState.position.Time),1);
@@ -213,8 +229,10 @@ end
 % warning("Most of the 'To Workspace' have been disabled to save space!");
 
 % strcase = "q0_1000__w0_wb__kw_1__ka_2_illcheck";
-strcase = "bennu_testing_rw_desat";
-folder = "results\att_tuning\testing\" + strcase;
+% strcase = "bennu_testing_rw_desat";
+% folder = "results\att_tuning\testing\" + strcase;
+strcase = "q1000_w0_wb";
+folder = "gfx/Bennu_zenith_point/" + strcase;
 mkdir(folder);
 
 T_short = simOut.time(1):simOut.time(end);
@@ -226,21 +244,25 @@ toSave.T_short = T_short;
 toSave.q_SB = q_SB;
 toSave.q_target = q_target;
 
-figure; 
+f = figure; 
 tiledlayout(2,2);
 nexttile
-plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 1));
+plot(simOut.SCState.q_SB.Time./86400, simOut.SCState.q_SB.Data(:, 1));
 title("$q_w$", 'Interpreter','latex')
 nexttile
-plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 2));
+plot(simOut.SCState.q_SB.Time./86400, simOut.SCState.q_SB.Data(:, 2));
 title("$q_x$", 'Interpreter','latex')
 nexttile
-plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 3));
+plot(simOut.SCState.q_SB.Time./86400, simOut.SCState.q_SB.Data(:, 3));
 title("$q_y$", 'Interpreter','latex')
+xlabel("Time $[days]$", 'Interpreter', 'latex');
 nexttile
-plot(simOut.SCState.q_SB.Time, simOut.SCState.q_SB.Data(:, 4));
+plot(simOut.SCState.q_SB.Time./86400, simOut.SCState.q_SB.Data(:, 4));
 title("$q_z$", 'Interpreter','latex')
-savefig(folder + filesep + "q_SB.fig");
+xlabel("Time $[days]$", 'Interpreter', 'latex');
+f = figureRefine(f, 0.48, 0);
+savefig(f, folder + filesep + "q_SB.fig");
+exportgraphics(f, folder + filesep + "q_SB.pdf", 'ContentType', 'vector');
 
 figure; 
 tiledlayout(2,2);
@@ -256,7 +278,7 @@ title("$q_{t,y}$", 'Interpreter','latex')
 nexttile
 plot(simOut.q_target.Time, simOut.q_target.Data(:, 4));
 title("$q_{t,z}$", 'Interpreter','latex')
-savefig(folder + filesep + "q_target.fig");
+% savefig(folder + filesep + "q_target.fig");
 
 figure; 
 tiledlayout(2,2);
@@ -272,7 +294,7 @@ title("$q_{diff,y}$", 'Interpreter','latex')
 nexttile
 plot(T_short, q_SB(:, 4) - q_target(:, 4));
 title("$q_{diff,z}$", 'Interpreter','latex')
-savefig(folder + filesep + "q_diff.fig");
+% savefig(folder + filesep + "q_diff.fig");
 
 %%
 
@@ -289,7 +311,7 @@ title("Pitch", 'Interpreter','latex')
 nexttile
 plot(simOut.SCState.q_SB.Time, euls(:, 3));
 title("Roll", 'Interpreter','latex')
-savefig(folder + filesep + "euls.fig");
+% savefig(folder + filesep + "euls.fig");
 
 %%
 
@@ -300,18 +322,21 @@ end
 controlTau = interp1(simOut.controlTau.Time, simOut.controlTau.Data, T_short);
 toSave.controlTau = controlTau;
 
-figure; 
+f = figure; 
 tiledlayout(3,1);
 nexttile
-plot(simOut.controlTau.Time, simOut.controlTau.Data(:,1));
-title("$\tau_x$", 'Interpreter', 'latex');
+plot(simOut.controlTau.Time./86400, simOut.controlTau.Data(:,1));
+ylabel("$\tau_x$ $[Nm]$", 'Interpreter', 'latex');
 nexttile
-plot(simOut.controlTau.Time, simOut.controlTau.Data(:,2));
-title("$\tau_y$", 'Interpreter', 'latex');
+plot(simOut.controlTau.Time./86400, simOut.controlTau.Data(:,2));
+ylabel("$\tau_y$ $[Nm]$", 'Interpreter', 'latex');
 nexttile
-plot(simOut.controlTau.Time, simOut.controlTau.Data(:,3));
-title("$\tau_z$", 'Interpreter', 'latex');
-savefig(folder + filesep + "controlTau.fig");
+plot(simOut.controlTau.Time./86400, simOut.controlTau.Data(:,3));
+ylabel("$\tau_z$ $[Nm]$", 'Interpreter', 'latex');
+xlabel("Time $[days]$", 'Interpreter', 'latex');
+f = figureRefine(f, 0.7, 2);
+savefig(f, folder + filesep + "controlTau_SB.fig");
+exportgraphics(f, folder + filesep + "controlTau_SB.pdf", 'ContentType', 'vector');
 
 %%
 
@@ -324,18 +349,21 @@ w_target = interp1(simOut.w_target.Time, simOut.w_target.Data, T_short);
 toSave.angVel = angVel;
 toSave.w_target = w_target;
 
-figure; 
+f = figure; 
 tiledlayout(3,1);
 nexttile; hold on; grid on;
-plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 1));
-title("$\omega_x$", 'Interpreter','latex')
+plot(simOut.SCState.ang_velocity.Time./86400, simOut.SCState.ang_velocity.Data(:, 1));
+ylabel("$\omega_x$ $[rad/s]$", 'Interpreter','latex')
 nexttile; hold on; grid on;
-plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 2));
-title("$\omega_y$", 'Interpreter','latex')
+plot(simOut.SCState.ang_velocity.Time./86400, simOut.SCState.ang_velocity.Data(:, 2));
+ylabel("$\omega_y$ $[rad/s]$", 'Interpreter','latex')
 nexttile; hold on; grid on;
-plot(simOut.SCState.ang_velocity.Time, simOut.SCState.ang_velocity.Data(:, 3));
-title("$\omega_z$", 'Interpreter','latex')
-savefig(folder + filesep + "angVel.fig");
+plot(simOut.SCState.ang_velocity.Time./86400, simOut.SCState.ang_velocity.Data(:, 3));
+ylabel("$\omega_z$ $[rad/s]$", 'Interpreter','latex')
+xlabel("Time $[days]$", 'Interpreter', 'latex');
+f = figureRefine(f, 0.48, 0);
+savefig(f, folder + filesep + "ws.fig");
+exportgraphics(f, folder + filesep + "ws.pdf", 'ContentType', 'vector');
 
 figure; 
 tiledlayout(3,1);
@@ -348,7 +376,7 @@ title("$\omega_{t,y}$", 'Interpreter','latex')
 nexttile; hold on; grid on;
 plot(simOut.w_target.Time, simOut.w_target.Data(:, 3));
 title("$\omega_{t,z}$", 'Interpreter','latex')
-savefig(folder + filesep + "wTarget.fig");
+% savefig(folder + filesep + "wTarget.fig");
 
 figure; 
 tiledlayout(3,1);

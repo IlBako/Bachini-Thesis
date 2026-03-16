@@ -70,6 +70,7 @@ control.frequency = 1;  % [Hz] frequency of command block
 % For test orbit: vS0 = [0 -101.014522388756 0]
 
 % BENNU: (a = 350 m, e = 0, i = 45°, OM = 45°, om = 0°, theta = 0°)
+% ITOKAWA: (a = 350 m, e = 0.1, i = 90°, OM = 90°, om = 90°, theta = 0°)
 
 % Target keplerian elements
 a_target = 350;
@@ -93,7 +94,8 @@ control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*si
 [control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
 
 % BENNU: lambda = [2, 2], K = 1e-2*eye(3), phi = 5
-% KLEOPATRA: lambda = [2, 2], K = 1e-3*eye(3), phi = 20
+% ITOKAWA: lambda = [2, 2], K = diag([1e-2, 1.1, 1e-2]), phi = 5
+% KLEOPATRA: lambda = [2, 2], K = diag([1e-2, 5.57*1e3, 1e-2]), phi = 20
 
 % Control paramters of the SMC
 control.lambdaR = 2;
@@ -101,7 +103,7 @@ control.lambdaN = 2;
 control.K = 1e-2*eye(3);
 control.phi = 5*diag(control.K);
 control.sPlus = 0;
-control.sMinus = -Inf;
+control.sMinus = -realmax;
 
 %% Attitude control
 
@@ -111,7 +113,7 @@ control.sMinus = -Inf;
 
 % Starting value of kw: max(diag(spacecraft.I_mat))/min(diag(spacecraft.I_mat))*ones(1,3)
 
-control.kw = 1*max(diag(spacecraft.I_mat))/min(diag(spacecraft.I_mat))*ones(1,3);
-control.katt = 2e-3*diag(spacecraft.I_mat) .* [1 1 1]';
+control.kw = 7.5*max(diag(spacecraft.I_mat))/min(diag(spacecraft.I_mat))*ones(1,3);
+control.katt = 2.5e-3*diag(spacecraft.I_mat) .* [1 1 1]';
 
 end

@@ -6,11 +6,12 @@ function init = initConditionConfig(control)
 %% States configuration
 init.scPosition = control.rr0;
 init.scVelocity = control.vv0;
-% init.quaternion = [1 0 0 0];
+init.quaternion = [1 0 0 0];
 % init.quaternion = eul2quat(deg2rad([5 3 5]));
 init.quaternion = eul2quat(deg2rad([50 30 25]));
-init.scAngularVel = [0;0;4.0684e-4]*0; % BENNU
+init.scAngularVel = [0;0;4.0684e-4]; % BENNU
 % init.scAngularVel = [0;0;3.3118e-4]; % KLEOPATRA
+% init.scAngularVel = [0;0;1.4386e-4]; % ITOKAWA
 
 % Asteroid's initial condition from Horizon ephemerides
 % ITOKAWA
