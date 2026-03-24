@@ -3,7 +3,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clc; close all; clearvars -except isProjectLoaded
+clear parallelSetUpFcn
+delete(gcp('nocreate'));
+Simulink.sdi.clear;
 options.reloadProject = false;
+rng("default");
 
 %% Initialization
 
@@ -15,6 +19,14 @@ if ~isProjectLoaded || options.reloadProject
     proj = openProject("ARIES.prj");
     isProjectLoaded = true;
 end
+
+%% Start the parallel pool
+
+if isempty(gcp('nocreate')) % Parpool Creation
+    parpool(20);
+end
+
+addAttachedFiles(gcp, {'stochInitFcn.m', 'stochOutFcn.m', 'configData.mat'});
 
 %% Data loading
 

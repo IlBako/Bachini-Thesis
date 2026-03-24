@@ -3,34 +3,32 @@ function model = stochasticInitializer(stochastic, environment, actuators, contr
 %       CONFIGURATION FILE FOR STOCHASTIC SIMULATION INITIALIZATION       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Parpool Creation
-if isempty(gcp('nocreate')) % Parpool Creation
-    parpool;
-end
-
 %% Model Loading
 load_system(simulation.modelName);
 set_param(simulation.modelName, ...
     'StopTime', simulation.simulationTime, ...
     'FixedStep', simulation.simulationTimeStep, ...
     'SolverType', simulation.solverType, ...
-    'Solver', simulation.solver);
+    'Solver', simulation.solver, ...
+    'SimulationMode', stochastic.executionMode);
 
 %% Output Configuration
 simulation.toWorkspace = ["External Environment/Spacecraft State"; ...
-                          "External Environment/Asteroid State"; ...
-                          "External Environment/Accelerations"; ...
+                          % "External Environment/Asteroid State"; ...
+                          % "External Environment/Accelerations"; ...
                           "Actuators Bus"; ...
                           "Distance And Shadow/Illuminated State"; ...
-                          "Attitude Control/q target"; ...
-                          "Attitude Control/w target"; ...
-                          "Attitude Control/control Tau"; ...
-                          "Distance And Shadow/Illuminated State"; ...
-                          "Distance And Shadow/Illuminated State";];
+                          "Attitude Control/control Tau"];
 
 if simulation.variants.control == "ORBIT_KEEPING"
     simulation.toWorkspace = [simulation.toWorkspace; ...
                               "Control Unit/Orbit Keeping Control/control Acceleration"];
+end
+
+if simulation.variants.attTarget ~= "INERTIAL"
+    simulation.toWorkspace = [simulation.toWorkspace; ...
+                              "Attitude Control/q target"; ...
+                              "Attitude Control/w target";];
 end
 
 %% Define gravity matrices
@@ -47,9 +45,8 @@ save('configData.mat', 'environment', 'actuators', 'control', 'spacecraft', 'ini
 
 %% Stochastic Parameters Assignment
 model = model.setModelParameter('FastRestart', stochastic.fastRestart);
-model = model.setModelParameter("SimulationMode",stochastic.executionMode);
-% model = model.setPostSimFcn(@(simulationOutput) stochOutFcn(simulationOutput));
-model = model.setPreSimFcn(@(simIn) stochInitFcn(simIn));
+model = model.setPostSimFcn(@stochOutFcn);
+model = model.setPreSimFcn(@stochInitFcn);
 model = repmat(model,stochastic.simulationNumber,1);
 
 %% Stochastic Variables Assignment
@@ -63,6 +60,7 @@ if ~isempty(stochVariables)
     parfor i = 1:stochastic.simulationNumber   
         model(i) = model(i).setVariable('stochasticFactors', stochFactors(i, :));
         model(i) = model(i).setVariable('stochasticVariables', stochVariables);
+        model(i) = model(i).setUserString(sprintf('Run_%04d', i));
         send(parfor_progress, i);
     end
     close(hWait);

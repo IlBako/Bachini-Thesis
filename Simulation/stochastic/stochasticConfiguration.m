@@ -4,7 +4,7 @@ function [stochastic] = stochasticConfiguration()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Simulation Settings
-stochastic.simulationNumber                     = 64;
+stochastic.simulationNumber                     = 500;
 stochastic.executionMode                        ='accelerator';
 stochastic.fastRestart                          ='on';
 
@@ -23,9 +23,9 @@ stochastic.activeParameters.omegaY              = false;
 stochastic.activeParameters.omegaZ              = false;
 
 %% Uncertainty Parameters Selection - Actuators
-stochastic.activeParameters.hrMaxTotal          = true;
-stochastic.activeParameters.hrDotMaxTotal       = true;
-stochastic.activeParameters.TmaxDesat           = true;
+stochastic.activeParameters.hrMaxTotal          = false;
+stochastic.activeParameters.hrDotMaxTotal       = false;
+stochastic.activeParameters.TmaxDesat           = false;
 
 %% Uncertainty Parameters Creations - Actuators
 stochastic.parameters.actuators = [];
