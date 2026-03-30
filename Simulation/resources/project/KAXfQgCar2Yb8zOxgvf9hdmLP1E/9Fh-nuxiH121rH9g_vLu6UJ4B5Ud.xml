@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Info File="Bus_objects.m" GroupUUID="" Icon="" Name="Bus_objects" Type="StartUp" Visible="0"/>
+<Info File="functions/utils/Bus_objects.m" GroupUUID="" Icon="" Name="Bus_objects" Type="StartUp" Visible="0"/>
