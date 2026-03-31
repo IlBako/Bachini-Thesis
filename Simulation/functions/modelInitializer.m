@@ -28,4 +28,9 @@ model = model.setVariable('variants', simulation.variants);
 %% Assign BVH objects
 createBVHObjects(simulation.modelName, environment.asteroidData.BVH);
 
+%% Assign waypoint objects if necessary
+if simulation.variants.control == controlVariant.WAYPOINT
+    createWaypointObjects(simulation.modelName, control.waypoints);
+end
+
 end

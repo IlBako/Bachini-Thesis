@@ -25,7 +25,7 @@ environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
 [control, spacecraft] = controlConfig(environment.asteroidMu);
 init = initConditionConfig(control);
-simulation = simulationConfig();
+simulation = simulationConfig(control);
 
 gravAtt = Simulink.Parameter(environment.gravStruct.gravAtt);
 gravAtt.CoderInfo.StorageClass = 'Auto';
@@ -43,7 +43,6 @@ model = modelInitializer(environment, actuators, control, spacecraft, init, simu
 tic
 simOut = sim(model);
 toc
-
 % tic
 % simOut = sim(modelName,'SimulationMode','normal');
 % toc
@@ -51,6 +50,46 @@ toc
 % if simOut.time(end) < configs.sim.Tf
 %     disp("Simulation finished early!");
 % end
+
+%%
+
+f = figure; hold on; view(45,30);
+axis equal; grid on;
+xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
+% xlim([-500 500]); ylim([-500 500]); zlim([-200 450]);
+meshData = environment.asteroidData.mesh;
+drawMesh(meshData);
+plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1);
+scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled');
+scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled');
+legend("Trajectory", "End position", "Start position", 'Interpreter', 'latex', 'Location', 'northeast');
+
+% [sp.X, sp.Y, sp.Z] = sphere;
+
+wpData = load("data\bennuWaypoints.mat");
+for ii = 1:wpData.NWaypoints
+    s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'HandleVisibility', 'off');
+    dtRow = dataTipTextRow("idx",ii);
+    s.DataTipTemplate.DataTipRows(end+1) = dtRow;
+    % mesh(sp.X*control.waypoints.proxRadius+wpData.wp_r(ii, 1), sp.Y*control.waypoints.proxRadius+wpData.wp_r(ii, 2), sp.Z*control.waypoints.proxRadius+wpData.wp_r(ii, 3), 'EdgeColor', 'none', 'FaceColor', 'cyan', 'FaceAlpha', 0.25, 'HandleVisibility', 'off');
+end
+burnIdxs = find(vecnorm(simOut.controlAcc.Data,2,2) ~= 0);
+burnIdxs = [burnIdxs(1); burnIdxs(find(diff(burnIdxs) ~= 1)+1)];
+for ii = 1:length(burnIdxs)
+    s = scatter3(simOut.SCState.position.Data(burnIdxs(ii),1), simOut.SCState.position.Data(burnIdxs(ii),2), simOut.SCState.position.Data(burnIdxs(ii),3), 'k', 'filled', 'HandleVisibility','off');
+    dtRow = dataTipTextRow("currentWaypointIdx",simOut.currentWaypointIdx.Data(burnIdxs(ii)));
+    s.DataTipTemplate.DataTipRows(end+1) = dtRow;
+end
+
+%%
+f = figure; hold on; grid on;
+plot(simOut.controlAcc.Time./3600, vecnorm(squeeze(simOut.controlAcc.Data),2,2));
+xlabel("Time $[hours]$", 'Interpreter', 'latex');
+ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
+title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(simOut.controlAcc.Data,2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+
+return
+
 %%
 % Y0 = [configs.sim.rS0, configs.sim.vS0, configs.sim.q0, configs.sim.w0, configs.sim.rB0, configs.sim.vB0];
 % opts = odeset('RelTol', 1e-3, 'MaxStep', 10, 'Events', @(t,y) collision_event(t, y, gravInterpDict("laplacian")));
@@ -78,9 +117,9 @@ if true
     scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled');
     scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled');
     legend("Trajectory", "End position", "Start position", 'Interpreter', 'latex', 'Location', 'northeast');
-    f = figureRefine(f, 0.48, 0);
-    savefig(f, "gfx/Bennu_OK/Bennu_3d_trajectory.fig");
-    exportgraphics(f, "gfx/Bennu_OK/Bennu_3d_trajectory.pdf", 'ContentType','vector');
+    % f = figureRefine(f, 0.48, 0);
+    % savefig(f, "gfx/Bennu_OK/Bennu_3d_trajectory.fig");
+    % exportgraphics(f, "gfx/Bennu_OK/Bennu_3d_trajectory.pdf", 'ContentType','vector');
 end
 
 %%
@@ -111,29 +150,29 @@ f = figure; hold on; grid on;
 plot(simOut.SCState.position.Time./86400, semiMajAxis);
 xlabel("Time $[day]$", 'Interpreter', 'latex');
 title({"Semi-major axis","$\mu_a = "+num2str(mean(semiMajAxis))+"\ m$, $\sigma_a = "+num2str(std(semiMajAxis))+"\ m$"}, 'Interpreter', 'latex')
-f = figureRefine(f, 0.48, 0);
-savefig(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.fig");
-exportgraphics(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.pdf", 'ContentType','vector');
+% f = figureRefine(f, 0.48, 0);
+% savefig(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.fig");
+% exportgraphics(f, "gfx/Bennu_OK_120/Bennu_semimaj_ax.pdf", 'ContentType','vector');
 
 f = figure; hold on; grid on;
 plot(simOut.currentEcc.Time./86400, vecnorm(simOut.currentEcc.Data,2,2));
 xlabel("Time $[day]$", 'Interpreter', 'latex');
 title({"Eccentricity","$\mu_e = "+num2str(mean(vecnorm(simOut.currentEcc.Data,2,2)))+"$, $\sigma_e = "+num2str(std(vecnorm(simOut.currentEcc.Data,2,2)))+"$"}, 'Interpreter', 'latex')
-f = figureRefine(f, 0.48, 0);
-savefig(f, "gfx/Bennu_OK_120/Bennu_ecc.fig");
-exportgraphics(f, "gfx/Bennu_OK_120/Bennu_ecc.pdf", 'ContentType','vector');
+% f = figureRefine(f, 0.48, 0);
+% savefig(f, "gfx/Bennu_OK_120/Bennu_ecc.fig");
+% exportgraphics(f, "gfx/Bennu_OK_120/Bennu_ecc.pdf", 'ContentType','vector');
 
 
 %%
 
 f = figure; hold on; grid on;
-plot(simOut.controlAcc.Time./86400, vecnorm(squeeze(simOut.controlAcc.Data)',2,2));
+plot(simOut.controlAcc.Time./86400, vecnorm(squeeze(simOut.controlAcc.Data),2,2));
 xlabel("Time $[day]$", 'Interpreter', 'latex');
 ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
-title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data)',2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
-f = figureRefine(f, 0.7, 3);
-savefig(f, "gfx/Bennu_OK_120/Bennu_controlAcc.fig");
-exportgraphics(f, "gfx/Bennu_OK_120/Bennu_controlAcc.pdf", 'ContentType','vector');
+title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+% f = figureRefine(f, 0.7, 3);
+% savefig(f, "gfx/Bennu_OK_120/Bennu_controlAcc.fig");
+% exportgraphics(f, "gfx/Bennu_OK_120/Bennu_controlAcc.pdf", 'ContentType','vector');
 
 return
 %%
@@ -260,9 +299,9 @@ nexttile
 plot(simOut.SCState.q_SB.Time./86400, simOut.SCState.q_SB.Data(:, 4));
 title("$q_z$", 'Interpreter','latex')
 xlabel("Time $[days]$", 'Interpreter', 'latex');
-f = figureRefine(f, 0.48, 0);
-savefig(f, folder + filesep + "q_SB.fig");
-exportgraphics(f, folder + filesep + "q_SB.pdf", 'ContentType', 'vector');
+% f = figureRefine(f, 0.48, 0);
+% savefig(f, folder + filesep + "q_SB.fig");
+% exportgraphics(f, folder + filesep + "q_SB.pdf", 'ContentType', 'vector');
 
 figure; 
 tiledlayout(2,2);
@@ -334,9 +373,9 @@ nexttile
 plot(simOut.controlTau.Time./86400, simOut.controlTau.Data(:,3));
 ylabel("$\tau_z$ $[Nm]$", 'Interpreter', 'latex');
 xlabel("Time $[days]$", 'Interpreter', 'latex');
-f = figureRefine(f, 0.7, 2);
-savefig(f, folder + filesep + "controlTau_SB.fig");
-exportgraphics(f, folder + filesep + "controlTau_SB.pdf", 'ContentType', 'vector');
+% f = figureRefine(f, 0.7, 2);
+% savefig(f, folder + filesep + "controlTau_SB.fig");
+% exportgraphics(f, folder + filesep + "controlTau_SB.pdf", 'ContentType', 'vector');
 
 %%
 
@@ -361,9 +400,9 @@ nexttile; hold on; grid on;
 plot(simOut.SCState.ang_velocity.Time./86400, simOut.SCState.ang_velocity.Data(:, 3));
 ylabel("$\omega_z$ $[rad/s]$", 'Interpreter','latex')
 xlabel("Time $[days]$", 'Interpreter', 'latex');
-f = figureRefine(f, 0.48, 0);
-savefig(f, folder + filesep + "ws.fig");
-exportgraphics(f, folder + filesep + "ws.pdf", 'ContentType', 'vector');
+% f = figureRefine(f, 0.48, 0);
+% savefig(f, folder + filesep + "ws.fig");
+% exportgraphics(f, folder + filesep + "ws.pdf", 'ContentType', 'vector');
 
 figure; 
 tiledlayout(3,1);
@@ -396,4 +435,4 @@ title("$\omega_{e,z}$", 'Interpreter','latex')
 
 %%
 
-save(folder + filesep + "data.mat", "toSave", "control", "init")
+% save(folder + filesep + "data.mat", "toSave", "control", "init")

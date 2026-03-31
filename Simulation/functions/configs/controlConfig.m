@@ -57,53 +57,71 @@ spacecraft.rPMat = [0     0   0.625;
 
 control.frequency = 1;  % [Hz] frequency of command block
 
-% X-Y orbit (a = 120km, e = 0, i = 0, OM = 0, om = 0, theta = 0)
+% Control algorithm type
+control.orbitKeepingAlg = controlVariant.WAYPOINT;
 
-% Y-Z orbit (a = 40km, e = 0, i = 90, OM = 90, om = 0, theta = 0)
+if control.orbitKeepingAlg == controlVariant.ORBIT_KEEPING
 
-% Test orbit from "3D plausible orbital stability close to asteroid (216)
-% Kleopatra" (a = 312.5km, e = 0.2, i = 180, OM = 0, om = 0, theta = 0) 
-% For test orbit: vS0 = [-6.05798274507417 -91.6645500432013 0.0329814808174932]
+    % X-Y orbit (a = 120km, e = 0, i = 0, OM = 0, om = 0, theta = 0)
 
-% 2nd test orbit from "3D plausible orbital stability close to asteroid (216)
-% Kleopatra" (a = 200km, e = 0.3, i = 180, OM = 0, om = 0, theta = 0) 
-% For test orbit: vS0 = [0 -101.014522388756 0]
+    % Y-Z orbit (a = 40km, e = 0, i = 90, OM = 90, om = 0, theta = 0)
 
-% BENNU: (a = 350 m, e = 0, i = 45°, OM = 45°, om = 0°, theta = 0°)
-% ITOKAWA: (a = 350 m, e = 0.1, i = 90°, OM = 90°, om = 90°, theta = 0°)
+    % Test orbit from "3D plausible orbital stability close to asteroid (216)
+    % Kleopatra" (a = 312.5km, e = 0.2, i = 180, OM = 0, om = 0, theta = 0)
+    % For test orbit: vS0 = [-6.05798274507417 -91.6645500432013 0.0329814808174932]
 
-% Target keplerian elements
-a_target = 350;
-e_target = 0;
-i_target = deg2rad(45);
-OM_target = deg2rad(45);
-om_target = deg2rad(0);
-theta_start = 0;
+    % 2nd test orbit from "3D plausible orbital stability close to asteroid (216)
+    % Kleopatra" (a = 200km, e = 0.3, i = 180, OM = 0, om = 0, theta = 0)
+    % For test orbit: vS0 = [0 -101.014522388756 0]
 
-control.kep_target = [a_target, e_target, i_target, OM_target, om_target];
+    % BENNU: (a = 350 m, e = 0, i = 45°, OM = 45°, om = 0°, theta = 0°)
+    % ITOKAWA: (a = 350 m, e = 0.1, i = 90°, OM = 90°, om = 90°, theta = 0°)
 
-% Target orbit parameters (angular momentum and eccentricity)
-control.h_target = sqrt(asteroidMu*a_target*(1-e_target^2))*...
-                    [sin(i_target)*sin(OM_target); -sin(i_target)*cos(OM_target); cos(i_target)];
-control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*sin(om_target)*cos(i_target);
-                                     sin(OM_target)*cos(om_target) + cos(OM_target)*sin(om_target)*cos(i_target);
-                                     sin(om_target)*sin(i_target)];
+    % Target keplerian elements
+    a_target = 350;
+    e_target = 0;
+    i_target = deg2rad(45);
+    OM_target = deg2rad(45);
+    om_target = deg2rad(0);
+    theta_start = 0;
 
-% Initial condition from keplerian orbit
+    control.kep_target = [a_target, e_target, i_target, OM_target, om_target];
 
-[control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
+    % Target orbit parameters (angular momentum and eccentricity)
+    control.h_target = sqrt(asteroidMu*a_target*(1-e_target^2))*...
+        [sin(i_target)*sin(OM_target); -sin(i_target)*cos(OM_target); cos(i_target)];
+    control.ecc_target = e_target*[cos(OM_target)*cos(om_target) - sin(OM_target)*sin(om_target)*cos(i_target);
+        sin(OM_target)*cos(om_target) + cos(OM_target)*sin(om_target)*cos(i_target);
+        sin(om_target)*sin(i_target)];
 
-% BENNU: lambda = [2, 2], K = 1e-2*eye(3), phi = 5
-% ITOKAWA: lambda = [2, 2], K = diag([1e-2, 1.1, 1e-2]), phi = 5
-% KLEOPATRA: lambda = [2, 2], K = diag([1e-2, 5.57*1e3, 1e-2]), phi = 20
+    % Initial condition from keplerian orbit
 
-% Control paramters of the SMC
-control.lambdaR = 2;
-control.lambdaN = 2;
-control.K = 1e-2*eye(3);
-control.phi = 5*diag(control.K);
-control.sPlus = 0;
-control.sMinus = -realmax;
+    [control.rr0, control.vv0] = kep2car(a_target, e_target, i_target, OM_target, om_target, theta_start, asteroidMu);
+
+    % BENNU: lambda = [2, 2], K = 1e-2*eye(3), phi = 5
+    % ITOKAWA: lambda = [2, 2], K = diag([1e-2, 1.1, 1e-2]), phi = 5
+    % KLEOPATRA: lambda = [2, 2], K = diag([1e-2, 5.57*1e3, 1e-2]), phi = 20
+
+    % Control paramters of the SMC
+    control.lambdaR = 2;
+    control.lambdaN = 2;
+    control.K = 1e-2*eye(3);
+    control.phi = 5*diag(control.K);
+    control.sPlus = 0;
+    control.sMinus = -realmax;
+
+elseif control.orbitKeepingAlg == controlVariant.WAYPOINT
+    load("data\bennuWaypoints.mat", "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc");
+    control.waypoints.NWaypoints = NWaypoints;
+    control.waypoints.waypointPosition = wp_r;
+    control.waypoints.waypointVelocity = wp_v;
+    control.waypoints.STMArcs = Phi_arcs;
+    control.waypoints.dtArc = dt_arc;
+    control.waypoints.proxRadius = 70;
+
+    control.rr0 = wp_r(1, :);
+    control.vv0 = wp_v(1, :);
+end
 
 %% Attitude control
 

@@ -1,4 +1,4 @@
-function simulation = simulationConfig()
+function simulation = simulationConfig(control)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %               CONFIGURATION FILE FOR SIMULATION SETTINGS                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -15,7 +15,7 @@ simulation.fastRestart                     = 'off';               % 'on' or 'off
 simulation.debugMode                       = 'off';               % 'on', 'off'
 
 %% Model variants setup
-simulation.variants.control                = controlVariant.ORBIT_KEEPING;
+simulation.variants.control                = control.orbitKeepingAlg;
 simulation.variants.attTarget              = attitudeTargetVariant.INERTIAL;
 simulation.variants.attActuator            = attActuatorVariant.REACTION_WHEELS_PYRAMID;
 
