@@ -7,9 +7,6 @@ assignParam(modelWorkspace, "WP_STMArcs",          waypoints.STMArcs);
 assignParam(modelWorkspace, "WP_proxRadius",       waypoints.proxRadius);
 assignParam(modelWorkspace, "WP_waypointPosition", waypoints.waypointPosition);
 assignParam(modelWorkspace, "WP_waypointVelocity", waypoints.waypointVelocity);
-assignParam(modelWorkspace, "WP_AMatArcs",         waypoints.AMatArcs);
-assignParam(modelWorkspace, "WP_waypointTime",     waypoints.waypointTime);
-assignParam(modelWorkspace, "WP_referenceTime",    waypoints.TRef);
 
 % The number of waypoints needs to be a define (compile-time constant)
 p = Simulink.Parameter;
