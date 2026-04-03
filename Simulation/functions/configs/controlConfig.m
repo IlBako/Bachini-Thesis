@@ -80,8 +80,8 @@ if control.orbitKeepingAlg == controlVariant.ORBIT_KEEPING
     % Target keplerian elements
     a_target = 350;
     e_target = 0;
-    i_target = deg2rad(45);
-    OM_target = deg2rad(45);
+    i_target = deg2rad(90);
+    OM_target = deg2rad(0);
     om_target = deg2rad(0);
     theta_start = 0;
 
@@ -111,13 +111,19 @@ if control.orbitKeepingAlg == controlVariant.ORBIT_KEEPING
     control.sMinus = -realmax;
 
 elseif control.orbitKeepingAlg == controlVariant.WAYPOINT
-    load("data\bennuWaypoints.mat", "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc");
+    
+    control.stmCorrection = true;
+
+    load("data\bennuWaypoints.mat", "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc", "A_arcs", "wp_t", "TRef");
     control.waypoints.NWaypoints = NWaypoints;
     control.waypoints.waypointPosition = wp_r;
     control.waypoints.waypointVelocity = wp_v;
     control.waypoints.STMArcs = Phi_arcs;
     control.waypoints.dtArc = dt_arc;
     control.waypoints.proxRadius = 70;
+    control.waypoints.AMatArcs = A_arcs;
+    control.waypoints.waypointTime = wp_t;
+    control.waypoints.TRef = TRef;
 
     control.rr0 = wp_r(1, :);
     control.vv0 = wp_v(1, :);

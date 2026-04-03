@@ -192,10 +192,13 @@ end
 % Propagate STM over the arcs and check its drift
 
 dt_arc   = TRef/NWaypoints;
+A_arcs = zeros(6,6,NWaypoints);
 Phi_arcs = zeros(6, 6, NWaypoints);
 drift_pos = zeros(NWaypoints, 1);
 drift_vel = zeros(NWaypoints, 1);
 cond_Phi_rv = zeros(NWaypoints, 1);
+
+wp_t = (0 : NWaypoints-1)' * dt_arc;
 
 for k = 1:NWaypoints
     init.scPosition = wp_r(k,:); 
@@ -203,9 +206,10 @@ for k = 1:NWaypoints
     k_next  = mod(k, NWaypoints) + 1;
 
     % Propagate arc under true EOM
-    [x_end, Phi_k, ~] = STMPropagationRunner(model, init, dt_arc);
+    [x_end, Phi_k, ~, A_k] = STMPropagationRunner(model, init, dt_arc);
     Phi_arcs(:,:,k)   = Phi_k;
     cond_Phi_rv(k)    = cond(Phi_k(1:3, 4:6));
+    A_arcs(:,:,k)     = A_k;
 
     % Natural drift to next reference waypoint
     x_next_ref  = [wp_r(k_next,:)'; wp_v(k_next,:)'];
@@ -219,25 +223,6 @@ end
 fprintf('\n    Max position drift : %.2f m\n',   max(drift_pos));
 fprintf('    Max velocity drift : %.4f m/s\n',   max(drift_vel));
 fprintf('    Max cond(Phi_rv)   : %.2e\n\n',     max(cond_Phi_rv));
-
-% Warnings 
-% if max(drift_pos) > WARN_DRIFT_POS
-%     warning(['Max arc position drift (%.1f m) exceeds threshold (%.1f m).\n' ...
-%              'Consider increasing NWaypoints to shorten arc durations.'], ...
-%              max(drift_pos), WARN_DRIFT_POS);
-% end
-% if max(drift_vel) > WARN_DRIFT_VEL
-%     warning(['Max arc velocity drift (%.4f m/s) exceeds threshold (%.4f m/s).\n' ...
-%              'Consider increasing NWaypoints.'], ...
-%              max(drift_vel), WARN_DRIFT_VEL);
-% end
-% if max(cond_Phi_rv) > 1e4
-%     [~, bad_arc] = max(cond_Phi_rv);
-%     warning(['Arc %d has cond(Phi_rv)=%.2e > 1e4.\n' ...
-%              'STM targeting will be ill-conditioned for this arc.\n' ...
-%              'Consider adjusting NWaypoints to shift arc durations.'], ...
-%              bad_arc, max(cond_Phi_rv));
-% end
 
 %% Plot final waypoints
 
@@ -263,7 +248,9 @@ fprintf('Saving to %s...\n', saveFile);
 save(saveFile, ...
     'wp_r',        ...   % Nx3  waypoint positions [m]
     'wp_v',        ...   % Nx3  waypoint velocities [m/s]
+    'wp_t',        ...   % Nx1  waypoint time [s]
     'Phi_arcs',    ...   % 6x6xN arc STMs
+    'A_arcs',      ...   % A mat at start of each arc
     'TRef',        ...   % reference orbit period [s]
     'dt_arc',      ...   % arc duration [s]
     'x0Ref',       ...   % 6x1 reference initial state

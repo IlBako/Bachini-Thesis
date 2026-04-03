@@ -34,6 +34,9 @@ gravLaplace = Simulink.Parameter(environment.gravStruct.gravLaplace);
 gravLaplace.CoderInfo.StorageClass = 'Auto';
 gravLaplace.CoderInfo.CustomStorageClass = "Default";
 
+ctrlVar = Simulink.Parameter(simulation.variants.control);
+ctrlVar.StorageClass = 'ExportedGlobal';
+
 %% Model initialization
 
 model = modelInitializer(environment, actuators, control, spacecraft, init, simulation);
@@ -56,7 +59,7 @@ toc
 f = figure; hold on; view(45,30);
 axis equal; grid on;
 xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
-% xlim([-500 500]); ylim([-500 500]); zlim([-200 450]);
+xlim([-500 500]); ylim([-500 500]); zlim([-300 450]);
 meshData = environment.asteroidData.mesh;
 drawMesh(meshData);
 plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1);
@@ -86,7 +89,7 @@ f = figure; hold on; grid on;
 plot(simOut.controlAcc.Time./3600, vecnorm(squeeze(simOut.controlAcc.Data),2,2));
 xlabel("Time $[hours]$", 'Interpreter', 'latex');
 ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
-title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(simOut.controlAcc.Data,2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
 
 return
 
