@@ -69,7 +69,7 @@ legend("Trajectory", "End position", "Start position", 'Interpreter', 'latex', '
 
 % [sp.X, sp.Y, sp.Z] = sphere;
 
-wpData = load("data\bennuWaypoints.mat");
+wpData = load("data\bennuWaypoints_orb1.mat");
 for ii = 1:wpData.NWaypoints
     s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'HandleVisibility', 'off');
     dtRow = dataTipTextRow("idx",ii);
@@ -86,10 +86,10 @@ end
 
 %%
 f = figure; hold on; grid on;
-plot(simOut.controlAcc.Time./3600, vecnorm(squeeze(simOut.controlAcc.Data),2,2));
+plot(simOut.controlAcc.Time./3600, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2));
 xlabel("Time $[hours]$", 'Interpreter', 'latex');
 ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
-title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(squeeze(simOut.controlAcc.Data),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
 
 return
 
