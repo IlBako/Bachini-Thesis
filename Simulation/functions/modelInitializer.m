@@ -31,6 +31,11 @@ createBVHObjects(simulation.modelName, environment.asteroidData.BVH);
 %% Assign waypoint objects if necessary
 if simulation.variants.control == controlVariant.WAYPOINT
     createWaypointObjects(simulation.modelName, control.waypoints);
+    modelWorkspace = get_param(simulation.modelName, "ModelWorkspace");
+    p = Simulink.Parameter;
+    p.Value = environment.asteroidAngularVelocity;
+    p.CoderInfo.StorageClass = 'ExportedGlobal';
+    assignin(modelWorkspace, 'asteroidAngularVelocity', p);
 end
 
 end

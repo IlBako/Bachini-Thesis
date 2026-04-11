@@ -28,11 +28,9 @@ init = initConditionConfig(control);
 simulation = simulationConfig(control);
 
 gravAtt = Simulink.Parameter(environment.gravStruct.gravAtt);
-gravAtt.CoderInfo.StorageClass = 'Auto';
-gravAtt.CoderInfo.CustomStorageClass = "Default";
+gravAtt.CoderInfo.StorageClass = 'ExportedGlobal';
 gravLaplace = Simulink.Parameter(environment.gravStruct.gravLaplace);
-gravLaplace.CoderInfo.StorageClass = 'Auto';
-gravLaplace.CoderInfo.CustomStorageClass = "Default";
+gravLaplace.CoderInfo.StorageClass = 'ExportedGlobal';
 
 ctrlVar = Simulink.Parameter(simulation.variants.control);
 ctrlVar.StorageClass = 'ExportedGlobal';

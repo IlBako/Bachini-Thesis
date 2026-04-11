@@ -118,7 +118,7 @@ elseif control.orbitKeepingAlg == controlVariant.WAYPOINT
     control.waypoints.waypointVelocity = wp_v;
     control.waypoints.STMArcs = Phi_arcs;
     control.waypoints.dtArc = dt_arc;
-    control.waypoints.proxRadius = 70;
+    control.waypoints.proxRadius = 25;
 
     control.waypoints.burnStrategy = burnStrategyVariant.ZEM_ONLY;
 
