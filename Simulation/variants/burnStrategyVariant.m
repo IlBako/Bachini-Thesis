@@ -1,6 +1,6 @@
 classdef burnStrategyVariant < Simulink.IntEnumType
     enumeration
-        ZEM_ONLY (1)
-        ARR_DEP (2)
+        SINGLE (1)
+        TWO_STAGE (2)
     end
 end

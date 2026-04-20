@@ -54,22 +54,25 @@ toc
 
 %%
 
-f = figure; hold on; view(45,30);
+f = figure; hold on; view(33,11);
 axis equal; grid on;
 xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
 % xlim([-500 500]); ylim([-500 500]); zlim([-300 450]);
 meshData = environment.asteroidData.mesh;
 drawMesh(meshData);
-plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1);
-scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled');
-scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled');
-legend("Trajectory", "End position", "Start position", 'Interpreter', 'latex', 'Location', 'northeast');
+plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1, 'DisplayName', 'Trajectory');
+% scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled', 'DisplayName', "End position");
+% scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled', 'DisplayName', "Start position");
 
 % [sp.X, sp.Y, sp.Z] = sphere;
 
 wpData = load("data\bennuWaypoints_orb1.mat");
 for ii = 1:wpData.NWaypoints
-    s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'HandleVisibility', 'off');
+    if ii == 1
+        s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'DisplayName', 'Waypoints');
+    else
+        s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'HandleVisibility', 'off');
+    end
     dtRow = dataTipTextRow("idx",ii);
     s.DataTipTemplate.DataTipRows(end+1) = dtRow;
     % mesh(sp.X*control.waypoints.proxRadius+wpData.wp_r(ii, 1), sp.Y*control.waypoints.proxRadius+wpData.wp_r(ii, 2), sp.Z*control.waypoints.proxRadius+wpData.wp_r(ii, 3), 'EdgeColor', 'none', 'FaceColor', 'cyan', 'FaceAlpha', 0.25, 'HandleVisibility', 'off');
@@ -77,17 +80,69 @@ end
 burnIdxs = find(vecnorm(simOut.controlAcc.Data,2,2) ~= 0);
 burnIdxs = [burnIdxs(1); burnIdxs(find(diff(burnIdxs) ~= 1)+1)];
 for ii = 1:length(burnIdxs)
+    if ii == 1
+    s = scatter3(simOut.SCState.position.Data(burnIdxs(ii),1), simOut.SCState.position.Data(burnIdxs(ii),2), simOut.SCState.position.Data(burnIdxs(ii),3), 'k', 'filled', 'DisplayName', 'Maneuvers');
+    else
     s = scatter3(simOut.SCState.position.Data(burnIdxs(ii),1), simOut.SCState.position.Data(burnIdxs(ii),2), simOut.SCState.position.Data(burnIdxs(ii),3), 'k', 'filled', 'HandleVisibility','off');
+    end
     dtRow = dataTipTextRow("currentWaypointIdx",simOut.currentWaypointIdx.Data(burnIdxs(ii)));
     s.DataTipTemplate.DataTipRows(end+1) = dtRow;
 end
+legend('Interpreter', 'latex', 'Location', 'northeast');
+
+f = figureRefine(f, 0.48);
+% savefig(f, "gfx/Kleopatra_waypoints/Nominal_3DTraj.fig");
+% exportgraphics(f, "gfx/Kleopatra_waypoints/Nominal_3DTraj.pdf", 'ContentType', 'vector');
+
 
 %%
 f = figure; hold on; grid on;
-plot(simOut.controlAcc.Time./3600, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2));
-xlabel("Time $[hours]$", 'Interpreter', 'latex');
-ylabel("$u$ $[m/s^2]$", 'Interpreter', 'latex');
-title({"Control acceleration $u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+plot(simOut.controlAcc.Time./wpData.TRef, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2));
+xlabel("Time [orbits]", 'Interpreter', 'latex');
+ylabel("$a_u$ $[m/s^2]$", 'Interpreter', 'latex');
+% legend('Interpreter', 'latex', 'Location', 'northoutside', 'Orientation', 'horizontal');
+title({"Control acceleration $a_u$", "$\Delta v$ = " + num2str(trapz(simOut.controlAcc.Time, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2))) + " $[m/s]$"}, 'Interpreter', 'latex')
+f = figureRefine(f, 0.8, 2);
+% savefig(f, "gfx/Kleopatra_waypoints/Nominal_ControlAcc.fig");
+% exportgraphics(f, "gfx/Kleopatra_waypoints/Nominal_ControlAcc.pdf", 'ContentType', 'vector');
+
+%% 
+
+% For each burn, the ARRIVAL error is measured at the NEXT burn
+% (i.e. burn k+1 fires when spacecraft is near waypoint k+1,
+%  so the position at burn k+1 start is the arrival from burn k)
+nBurns = length(burnIdxs);
+eps_k   = nan(nBurns - 1, 1);
+tActual = nan(nBurns - 1, 1);
+
+for ii = 1:nBurns - 1
+    % State at start of burn ii+1 = arrival from burn ii
+    arrivalIdx  = burnIdxs(ii + 1);
+
+    % Waypoint the spacecraft is arriving AT
+    % (current_k at arrival is the waypoint being approached,
+    %  which is the next waypoint after the one that triggered burn ii)
+    currWp  = simOut.currentWaypointIdx.Data(arrivalIdx);
+
+    % Position error at arrival
+    rActual = simOut.SCState.position.Data(arrivalIdx, :);
+    tActual(ii) = simOut.SCState.position.Time(arrivalIdx);
+    rWp     = wpData.wp_r(currWp, :);
+    eps_k(ii) = norm(rActual - rWp);
+end
+
+fprintf('Mean arrival position error: %.2f m\n', mean(eps_k));
+fprintf('Max  arrival position error: %.2f m\n', max(eps_k));
+fprintf('Min  arrival position error: %.2f m\n', min(eps_k));
+
+f = figure; hold on; grid on;
+plot(tActual/wpData.TRef, eps_k, 'b-o');
+xlabel('Time $[orbit]$', 'Interpreter', 'latex'); 
+ylabel('Arrival position error $[m]$', 'Interpreter', 'latex');
+% legend('Location', 'north', 'Orientation', 'horizontal', 'Interpreter', 'latex');
+f = figureRefine(f, 0.8, 2);
+% savefig(f, "gfx/Kleopatra_waypoints/Nominal_eps_k.fig");
+% exportgraphics(f, "gfx/Kleopatra_waypoints/Nominal_eps_k.pdf", 'ContentType', 'vector');
 
 return
 
