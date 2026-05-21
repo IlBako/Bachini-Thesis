@@ -21,9 +21,12 @@ end
 % gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
 gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 % gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
+
+waypointsPath = "data\bennuWaypoints_planar_15wp.mat";
+
 environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
-[control, spacecraft] = controlConfig(environment.asteroidMu);
+[control, spacecraft] = controlConfig(environment.asteroidMu, waypointsPath);
 init = initConditionConfig(control);
 simulation = simulationConfig(control);
 
@@ -61,12 +64,10 @@ xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
 meshData = environment.asteroidData.mesh;
 drawMesh(meshData);
 plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1, 'DisplayName', 'Trajectory');
-% scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 50, 'r', 'filled', 'DisplayName', "End position");
-% scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 50, 'g', 'filled', 'DisplayName', "Start position");
 
 % [sp.X, sp.Y, sp.Z] = sphere;
 
-wpData = load("data\bennuWaypoints_orb1.mat");
+wpData = load(waypointsPath);
 for ii = 1:wpData.NWaypoints
     if ii == 1
         s = scatter3(wpData.wp_r(ii,1), wpData.wp_r(ii, 2), wpData.wp_r(ii,3), 50, 'm', 'filled', 'DisplayName', 'Waypoints');
@@ -88,9 +89,13 @@ for ii = 1:length(burnIdxs)
     dtRow = dataTipTextRow("currentWaypointIdx",simOut.currentWaypointIdx.Data(burnIdxs(ii)));
     s.DataTipTemplate.DataTipRows(end+1) = dtRow;
 end
+
+scatter3(simOut.SCState.position.Data(end,1), simOut.SCState.position.Data(end,2), simOut.SCState.position.Data(end,3), 25, 'r', 'filled', 'DisplayName', "End position");
+scatter3(simOut.SCState.position.Data(1,1), simOut.SCState.position.Data(1,2), simOut.SCState.position.Data(1,3), 25, 'g', 'filled', 'DisplayName', "Start position");
+
 legend('Interpreter', 'latex', 'Location', 'northeast');
 
-f = figureRefine(f, 0.48);
+f = figureRefine(f, 0.8);
 % savefig(f, "gfx/Kleopatra_waypoints/Nominal_3DTraj.fig");
 % exportgraphics(f, "gfx/Kleopatra_waypoints/Nominal_3DTraj.pdf", 'ContentType', 'vector');
 

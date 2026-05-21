@@ -21,9 +21,12 @@ end
 % gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
 gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 % gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
+
+waypointsPath = "data\bennuWaypoints_planar1.mat";
+
 environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
-[control, spacecraft] = controlConfig(environment.asteroidMu);
+[control, spacecraft] = controlConfig(environment.asteroidMu, waypointsPath);
 init = initConditionConfig(control);
 simulation = simulationConfig();
 

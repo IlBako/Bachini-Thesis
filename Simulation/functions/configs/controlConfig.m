@@ -1,13 +1,15 @@
-function [control, spacecraft] = controlConfig(asteroidMu)
+function [control, spacecraft] = controlConfig(asteroidMu, waypointsPath)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                CONFIGURATION FILE FOR CONTROL PARAMETERS                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Spacecraft configs
 
 spacecraft.scMass = 600;
+% spacecraft.scMass = 10;
 
 % Principal moments of Intertia [Kg*m^2]
 I = [206.13261565 178.01640914 128.13379354];
+% I = I * (spacecraft.scMass/600)^(5/3);
 % Principal inertia matrix [Kg*m^2]
 spacecraft.I_mat = diag(I);
 % Inverse of intertia matrix
@@ -30,6 +32,7 @@ spacecraft.areaMat = [1*1.6*ones(2,1);
                       1*1.25*ones(2,1);
                       1.6*1.25*ones(2,1);
                       6*2.115*ones(4,1)];
+% spacecraft.areaMat = spacecraft.areaMat * (spacecraft.scMass/600)^(2/3);
 
 % Specular reflection coefficient of S/C  panels
 spacecraft.cSpec = [0.6*ones(6,1);
@@ -51,6 +54,8 @@ spacecraft.rPMat = [0     0   0.625;
                    -1.757 0   0;
                     1.757 0   0;
                     1.757 0   0];
+
+% spacecraft.rPMat = spacecraft.rPMat * (spacecraft.scMass/600) ^ (1/3);
 
 
 %% Orbit keeping algorithm
@@ -112,13 +117,13 @@ if control.orbitKeepingAlg == controlVariant.ORBIT_KEEPING
 
 elseif control.orbitKeepingAlg == controlVariant.WAYPOINT
     
-    load("data\bennuWaypoints_orb1.mat", "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc");
+    load(waypointsPath, "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc");
     control.waypoints.NWaypoints = NWaypoints;
     control.waypoints.waypointPosition = wp_r;
     control.waypoints.waypointVelocity = wp_v;
     control.waypoints.STMArcs = Phi_arcs;
     control.waypoints.dtArc = dt_arc;
-    control.waypoints.proxRadius = 1e3;
+    control.waypoints.proxRadius = 50;
 
     control.waypoints.burnStrategy = burnStrategyVariant.SINGLE;
 
