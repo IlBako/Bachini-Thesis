@@ -5,10 +5,10 @@ dt_mult = 0.5;
 f = figure; hold on; view(0,90);
 axis equal; grid on;
 xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
-% xlim([-500 500]); ylim([-500 500]); zlim([-300 450]);
+xlim([-500 500]); ylim([-500 500]); zlim([-300 450]);
 meshData = environment.asteroidData.mesh;
 drawMesh(meshData);
-% plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1, 'DisplayName', 'Trajectory');
+plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1, 'DisplayName', 'Trajectory');
 
 % agArrow = squeeze(ag(:,4,:,:)); % 75x3xN if ag is 75x4x3xN
 % accScale = 2; % adjust this factor to make acceleration arrows visible
@@ -62,10 +62,10 @@ for ii = 1:length(burnIdxs)
     s.DataTipTemplate.DataTipRows(end+1) = dtRow;
 
     if ii == 1
-        plot3(posData(highlightIdx,1), posData(highlightIdx,2), posData(highlightIdx,3), 'r-', 'LineWidth', 2.5, 'DisplayName', 'Half-arc subtrajectory');
+        % plot3(posData(highlightIdx,1), posData(highlightIdx,2), posData(highlightIdx,3), 'r-', 'LineWidth', 2.5, 'DisplayName', 'Half-arc subtrajectory');
         plot3(rr(:,1, burnIdxs(ii)), rr(:,2, burnIdxs(ii)), rr(:,3, burnIdxs(ii)), 'm--', 'LineWidth', 2, 'DisplayName', 'Propagated trajectory');
     else
-        plot3(posData(highlightIdx,1), posData(highlightIdx,2), posData(highlightIdx,3), 'r-', 'LineWidth', 2.5, 'HandleVisibility','off');
+        % plot3(posData(highlightIdx,1), posData(highlightIdx,2), posData(highlightIdx,3), 'r-', 'LineWidth', 2.5, 'HandleVisibility','off');
         plot3(rr(:,1, burnIdxs(ii)), rr(:,2, burnIdxs(ii)), rr(:,3, burnIdxs(ii)), 'm--', 'LineWidth', 2, 'HandleVisibility', 'off');
     end
     % quiver3(rr(:,1,burnIdxs(ii)), rr(:,2,burnIdxs(ii)), rr(:,3,burnIdxs(ii)), ...
@@ -81,19 +81,34 @@ legend('Interpreter', 'latex', 'Location', 'northeast');
 
 %% Compare with rerun
 
-Y0 = [posData(burnIdxs(1), :)'; simOut.SCState.velocity.Data(burnIdxs(1), :)'+squeeze(simOut.dvCmdGLLog.Data(burnIdxs(1), :))'];
-tspan = linspace(trajTime(burnIdxs(1)), trajTime(burnIdxs(1))+dt_arc, 200);
+rr2 = simOut.rr2Log.Data;
+allBurnIdxs = find(vecnorm(simOut.controlAcc.Data,2,2) ~= 0);
+burnEndIdxs = [allBurnIdxs(diff(allBurnIdxs) ~= 1)+1; allBurnIdxs(end)];
 
 params.mesh = environment.asteroidData.mesh;
 params.density = environment.asteroidData.density;
 params.angVel = [0;0;4.0684e-4]; % BENNU
 odeOpts = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-err = squeeze(rr(:, :, burnIdxs(1))) - Y(:, 1:3);
-figure; hold on; grid on; plot(linspace(tspan(1), tspan(2), 200), err)
+for ii = 1:length(burnEndIdxs)
+    rTraj2 = rr2(all(rr2(:,:, burnEndIdxs(ii)) ~= 0, 2), :, burnEndIdxs(ii));
 
-
-[T, Y] = ode45(@(t, y) odeFcn(t, y, params), tspan, Y0(:), odeOpts);
+    % Y0 = [posData(burnEndIdxs(ii), :)'; simOut.SCState.velocity.Data(burnEndIdxs(ii), :)'];
+    % % Y0 = [posData(burnIdxs(1), :)'; simOut.SCState.velocity.Data(burnIdxs(1), :)'+ reshape(squeeze(simOut.dvCmdLog.Data(:,:,burnIdxs(1))),3,[])];
+    % tspan = linspace(trajTime(burnEndIdxs(ii)), trajTime(burnEndIdxs(ii))+dt_arc, 200);
+    % 
+    % [T, Y] = ode45(@(t, y) odeFcn(t, y, params), tspan, Y0(:), odeOpts);
+    % 
+    % err = squeeze(rr2(:, :, burnEndIdxs(1))) - Y(:, 1:3);
+    
+    if ii == 1
+        % p = plot3(Y(:,1), Y(:,2), Y(:,3), 'k--', 'LineWidth', 2, 'DisplayName', 'rerun');
+        p2 = plot3(rTraj2(:,1), rTraj2(:,2), rTraj2(:,3), 'g', 'LineWidth', 4, 'DisplayName', '2nd Propagated trajectory');
+    else
+        % p = plot3(Y(:,1), Y(:,2), Y(:,3), 'k--', 'LineWidth', 2, 'HandleVisibility', 'off');
+        p2 = plot3(rTraj2(:,1), rTraj2(:,2), rTraj2(:,3), 'g', 'LineWidth', 4, 'HandleVisibility', 'off');
+    end
+end
 
 function dY = odeFcn(~, Y, params)
     r = Y(1:3);
