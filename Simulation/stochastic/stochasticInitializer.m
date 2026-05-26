@@ -16,16 +16,22 @@ set_param(simulation.modelName, ...
 simulation.toWorkspace = ["External Environment/Spacecraft State"; ...
                           % "External Environment/Asteroid State"; ...
                           % "External Environment/Accelerations"; ...
-                          "Actuators Bus"; ...
-                          "Distance And Shadow/Illuminated State"; ...
-                          "Attitude Control/control Tau"];
+                          % "Actuators Bus"; ...
+                          % "Distance And Shadow/Illuminated State"; ...
+                          % "Attitude Control/control Tau";
+                          ];
 
-if simulation.variants.control == "ORBIT_KEEPING"
+if simulation.variants.control == controlVariant.ORBIT_KEEPING
     simulation.toWorkspace = [simulation.toWorkspace; ...
                               "Control Unit/Orbit Keeping Control/control Acceleration"];
+elseif simulation.variants.control == controlVariant.WAYPOINT
+    simulation.toWorkspace = [simulation.toWorkspace; ...
+                              "Control Unit/Waypoint guidance/control Acceleration";
+                              "Control Unit/Waypoint guidance/currentWPIdx";
+                              ];
 end
 
-if simulation.variants.attTarget ~= "INERTIAL"
+if simulation.variants.attTarget ~= attitudeTargetVariant.INERTIAL
     simulation.toWorkspace = [simulation.toWorkspace; ...
                               "Attitude Control/q target"; ...
                               "Attitude Control/w target";];
@@ -38,10 +44,12 @@ gravAtt.CoderInfo.CustomStorageClass = "Default";
 gravLaplace = Simulink.Parameter(environment.gravStruct.gravLaplace);
 gravLaplace.CoderInfo.StorageClass = 'Auto';
 gravLaplace.CoderInfo.CustomStorageClass = "Default";
+ctrlVar = Simulink.Parameter(simulation.variants.control);
+ctrlVar.StorageClass = 'ExportedGlobal';
 
 %% Parameter Assignment and Common Data Saving
 model = Simulink.SimulationInput(simulation.modelName);
-save('configData.mat', 'environment', 'actuators', 'control', 'spacecraft', 'init', 'simulation', 'gravAtt', 'gravLaplace');
+save('configData.mat', 'environment', 'actuators', 'control', 'spacecraft', 'init', 'simulation', 'gravAtt', 'gravLaplace', 'ctrlVar');
 
 %% Stochastic Parameters Assignment
 model = model.setModelParameter('FastRestart', stochastic.fastRestart);

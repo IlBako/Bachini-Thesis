@@ -26,7 +26,7 @@ if isempty(gcp('nocreate')) % Parpool Creation
     parpool(20);
 end
 
-addAttachedFiles(gcp, {'stochInitFcn.m', 'stochOutFcn.m', 'configData.mat'});
+addAttachedFiles(gcp, {'stochInitFcn.m', 'stochOutFcn.m'}); %, 'configData.mat'});
 
 %% Data loading
 
@@ -37,7 +37,7 @@ environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
 [control, spacecraft] = controlConfig(environment.asteroidMu);
 init = initConditionConfig(control);
-simulation = simulationConfig();
+simulation = simulationConfig(control);
 
 %% Montecarlo configuration
 

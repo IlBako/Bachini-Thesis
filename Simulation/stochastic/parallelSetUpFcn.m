@@ -20,7 +20,7 @@ if isempty(isInitialized)
     modelWorkspace = get_param(modelName, 'ModelWorkspace');
 
     vars = {'environment', 'actuators', 'control', 'spacecraft', ...
-        'init', 'simulation', 'gravAtt', 'gravLaplace'};
+        'init', 'simulation', 'gravAtt', 'gravLaplace', 'ctrlVar'};
 
     for ii = 1:length(vars)
         assignin(modelWorkspace, vars{ii}, data.(vars{ii}));
@@ -47,6 +47,18 @@ if isempty(isInitialized)
     assignin(modelWorkspace, "BVH_vertexList", BVH.vertexList);
     assignin(modelWorkspace, "BVH_normals", BVH.normals);
 
+    if data.simulation.variants.control == controlVariant.WAYPOINT
+        waypoints = data.control.waypoints;
+        assignin(modelWorkspace, "WP_dtArc",                waypoints.dtArc);
+        assignin(modelWorkspace, "WP_STMArcs",              waypoints.STMArcs);
+        assignin(modelWorkspace, "WP_proxRadius",           waypoints.proxRadius);
+        assignin(modelWorkspace, "WP_burnStrategy",         waypoints.burnStrategy);
+        assignin(modelWorkspace, "WP_waypointPosition",     waypoints.waypointPosition);
+        assignin(modelWorkspace, "WP_waypointVelocity",     waypoints.waypointVelocity);
+        assignin(modelWorkspace, 'asteroidAngularVelocity', data.environment.asteroidAngularVelocity);
+    end
+
+
     %% Fast Restart Setup
     set_param(modelName, 'FastRestart', 'on');
     m_before_update = memory;
@@ -65,7 +77,7 @@ if isempty(isInitialized)
     warning('off');
     Simulink.sdi.clear;
     set_param(data.simulation.modelName, 'SignalLogging', 'off');
-    clear data BVH
+    clear data BVH waypoints
     isInitialized = true;
 end
 

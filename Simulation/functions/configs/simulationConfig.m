@@ -6,7 +6,8 @@ function simulation = simulationConfig(control)
 %% Simulation execution setup
 simulation.modelName                       = 'ARIES';
 % simulation.simulationTime                  = '1.728e5';               % [s] 
-simulation.simulationTime                  = '64800';               % [s] 
+% simulation.simulationTime                  = '64800';               % [s] 
+simulation.simulationTime                  = '5*2*pi*sqrt(350^3/4.8916)';               % [s] 
 simulation.simulationTimeStep              = '1e-1';              % [s] simulation integration timestep (fixed step solvers)
 simulation.solver                          = 'ode4';              % solver algorithm: 'ode4', 'ode45', 'ode15s', etc.
 simulation.solverType                      = 'fixed-step';        % 'fixed-step' or 'variable-step'
