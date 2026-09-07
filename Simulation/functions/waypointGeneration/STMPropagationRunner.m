@@ -1,4 +1,4 @@
-function [x_F,Phi_F, f_F, A_start] = STMPropagationRunner(model, init, TSim)
+function [x_F,Phi_F, f_F, A_start, state] = STMPropagationRunner(model, init, TSim)
 
     init.scPosition = reshape(init.scPosition, [1 3]);
     init.scVelocity = reshape(init.scVelocity, [1 3]);
@@ -11,4 +11,5 @@ function [x_F,Phi_F, f_F, A_start] = STMPropagationRunner(model, init, TSim)
     Phi_F = reshape(simOut.SCStateFinal(7:42), [6 6]);
     f_F = simOut.dYFinal(:);
     A_start = simOut.A_mat.Data(:,:,1);
+    state = simOut.SCState;
 end

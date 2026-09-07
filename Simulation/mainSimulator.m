@@ -19,16 +19,17 @@ end
 %% Data loading
 
 % gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
-gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
+gravDataPath = "..\GravityData\Kleopatra\final\Kleopatra_100.mat";
+% gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 % gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
 
-waypointsPath = "data\bennuWaypoints_planar_15wp.mat";
+waypointsPath = "data\kleopatraWaypoints_orb40_20wp.mat";
 
 environment = environmentConfig(gravDataPath);
 actuators = actuatorsConfig();
 [control, spacecraft] = controlConfig(environment.asteroidMu, waypointsPath);
 init = initConditionConfig(control);
-simulation = simulationConfig(control);
+simulation = simulationConfig(control, environment);
 
 gravAtt = Simulink.Parameter(environment.gravStruct.gravAtt);
 gravAtt.CoderInfo.StorageClass = 'ExportedGlobal';
@@ -47,9 +48,8 @@ model = modelInitializer(environment, actuators, control, spacecraft, init, simu
 tic
 simOut = sim(model);
 toc
-% tic
-% simOut = sim(modelName,'SimulationMode','normal');
-% toc
+
+TRef = simOut.time(end)/simulation.nOrbits;
 
 % if simOut.time(end) < configs.sim.Tf
 %     disp("Simulation finished early!");
@@ -63,7 +63,7 @@ xlabel("X [m]"); ylabel("Y [m]"); zlabel("Z [m]");
 % xlim([-500 500]); ylim([-500 500]); zlim([-300 450]);
 meshData = environment.asteroidData.mesh;
 drawMesh(meshData);
-plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 1, 'DisplayName', 'Trajectory');
+plot3(simOut.SCState.position.Data(:,1), simOut.SCState.position.Data(:,2), simOut.SCState.position.Data(:,3), 'LineWidth', 2, 'DisplayName', 'Trajectory');
 
 % [sp.X, sp.Y, sp.Z] = sphere;
 
@@ -102,7 +102,7 @@ f = figureRefine(f, 0.8);
 
 %%
 f = figure; hold on; grid on;
-plot(simOut.controlAcc.Time./wpData.TRef, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2));
+plot(simOut.controlAcc.Time./TRef, vecnorm(reshape(simOut.controlAcc.Data, [], 3),2,2));
 xlabel("Time [orbits]", 'Interpreter', 'latex');
 ylabel("$a_u$ $[m/s^2]$", 'Interpreter', 'latex');
 % legend('Interpreter', 'latex', 'Location', 'northoutside', 'Orientation', 'horizontal');
@@ -141,7 +141,7 @@ fprintf('Max  arrival position error: %.2f m\n', max(eps_k));
 fprintf('Min  arrival position error: %.2f m\n', min(eps_k));
 
 f = figure; hold on; grid on;
-plot(tActual/wpData.TRef, eps_k, 'b-o');
+plot(tActual/TRef, eps_k, 'b-o');
 xlabel('Time $[orbit]$', 'Interpreter', 'latex'); 
 ylabel('Arrival position error $[m]$', 'Interpreter', 'latex');
 % legend('Location', 'north', 'Orientation', 'horizontal', 'Interpreter', 'latex');

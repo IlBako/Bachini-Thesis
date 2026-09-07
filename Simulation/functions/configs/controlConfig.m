@@ -4,58 +4,94 @@ function [control, spacecraft] = controlConfig(asteroidMu, waypointsPath)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Spacecraft configs
 
-spacecraft.scMass = 600;
-% spacecraft.scMass = 10;
+name = "spacecraft";      % "BEATLE-1" or "spacecraft"
 
-% Principal moments of Intertia [Kg*m^2]
-I = [206.13261565 178.01640914 128.13379354];
-% I = I * (spacecraft.scMass/600)^(5/3);
-% Principal inertia matrix [Kg*m^2]
-spacecraft.I_mat = diag(I);
-% Inverse of intertia matrix
-spacecraft.I_inv = inv(spacecraft.I_mat);
+if strcmpi(name, "spacecraft")
 
-% Normal of S/C panel
-spacecraft.normalsMat = [0  0  1;
-                         0  0 -1;
-                         1  0  0;
-                        -1  0  0;
-                         0  1  0;
-                         0 -1  0
-                         0  0  1;
-                         0  0  1;
-                         0  0 -1;
-                         0  0 -1];
+    spacecraft.scMass = 600;
+    
+    % Principal moments of Intertia [Kg*m^2]
+    I = [206.13261565 178.01640914 128.13379354];
+    % Principal inertia matrix [Kg*m^2]
+    spacecraft.I_mat = diag(I);
+    % Inverse of intertia matrix
+    spacecraft.I_inv = inv(spacecraft.I_mat);
+    
+    % Normal of S/C panel
+    spacecraft.normalsMat = [0  0  1;
+                             0  0 -1;
+                             1  0  0;
+                            -1  0  0;
+                             0  1  0;
+                             0 -1  0
+                             0  0  1;
+                             0  0  1;
+                             0  0 -1;
+                             0  0 -1];
+    
+    % Area of S/C panels
+    spacecraft.areaMat = [1*1.6*ones(2,1);
+                          1*1.25*ones(2,1);
+                          1.6*1.25*ones(2,1);
+                          6*2.115*ones(4,1)];
+    
+    % Specular reflection coefficient of S/C  panels
+    spacecraft.cSpec = [0.6*ones(6,1);
+                        0.1*ones(4,1)];
+    
+    % diffuse coefficient of S/C panels
+    spacecraft.cDiff = [0.1*ones(6,1);
+                        0.1*ones(2,1);
+                        0.3*ones(2,1)];
+    
+    % Spacecraft CoM to panels vector
+    spacecraft.rPMat = [0     0   0.625;
+                        0     0  -0.625;
+                        0    -0.8 0;
+                        0     0.8 0;
+                        0.5   0   0;
+                       -0.5   0   0;
+                       -1.757 0   0;
+                       -1.757 0   0;
+                        1.757 0   0;
+                        1.757 0   0];
 
-% Area of S/C panels
-spacecraft.areaMat = [1*1.6*ones(2,1);
-                      1*1.25*ones(2,1);
-                      1.6*1.25*ones(2,1);
-                      6*2.115*ones(4,1)];
-% spacecraft.areaMat = spacecraft.areaMat * (spacecraft.scMass/600)^(2/3);
+elseif strcmpi(name, "BEATLE-1")
+    spacecraft.scMass = 8.41;
 
-% Specular reflection coefficient of S/C  panels
-spacecraft.cSpec = [0.6*ones(6,1);
-                    0.1*ones(4,1)];
+    I = [0.3600   -0.1900   -0.1100
+        -0.1900    0.5100    0.0900
+        -0.1100    0.0900    0.5400];
+    spacecraft.I_mat = I;
+    spacecraft.I_inv = inv(I);
 
-% Diffraction coefficient of S/C panels
-spacecraft.cDiff = [0.1*ones(6,1);
-                    0.1*ones(2,1);
-                    0.3*ones(2,1)];
+    spacecraft.normalsMat = [0  0  1;
+                             0  0 -1;
+                             0  1  0;
+                             0 -1  0;
+                             sqrt(3)/2  1/2  0;
+                            -sqrt(3)/2  1/2  0;
+                             sqrt(3)/2 -1/2  0;
+                            -sqrt(3)/2 -1/2  0;];
 
-% Asteroid CoM to panels vector
-spacecraft.rPMat = [0     0   0.625;
-                    0     0  -0.625;
-                    0    -0.8 0;
-                    0     0.8 0;
-                    0.5   0   0;
-                   -0.5   0   0;
-                   -1.757 0   0;
-                   -1.757 0   0;
-                    1.757 0   0;
-                    1.757 0   0];
+    spacecraft.areaMat = [0.15*ones(2,1);
+                          0.05*ones(6,1);];
 
-% spacecraft.rPMat = spacecraft.rPMat * (spacecraft.scMass/600) ^ (1/3);
+    spacecraft.cSpec = [0.5 *ones(2,1);
+                        0.45*ones(6,1)];
+
+    spacecraft.cDiff = [0.25*ones(2,1);
+                        0.15*ones(6,1)];
+
+    spacecraft.rPMat = [0       0      237.3;
+                        0       0     -140.7;
+                        0       207.5  141.3;
+                        0      -207.5  141.3;
+                        179.70  103.75 141.3;
+                       -179.70  103.75 141.3;
+                        179.70 -103.75 141.3;
+                       -179.70 -103.75 141.3;];
+end
 
 
 %% Orbit keeping algorithm
@@ -117,13 +153,14 @@ if control.orbitKeepingAlg == controlVariant.ORBIT_KEEPING
 
 elseif control.orbitKeepingAlg == controlVariant.WAYPOINT
     
-    load(waypointsPath, "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc");
+    load(waypointsPath, "NWaypoints", "wp_r", "wp_v","Phi_arcs", "dt_arc", "kepEls");
     control.waypoints.NWaypoints = NWaypoints;
     control.waypoints.waypointPosition = wp_r;
     control.waypoints.waypointVelocity = wp_v;
     control.waypoints.STMArcs = Phi_arcs;
     control.waypoints.dtArc = dt_arc;
-    control.waypoints.proxRadius = 50;
+    control.kep_target = cell2mat(struct2cell(kepEls))';
+    control.waypoints.proxRadius = 500;
 
     control.waypoints.burnStrategy = burnStrategyVariant.SINGLE;
 

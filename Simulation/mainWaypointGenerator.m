@@ -19,22 +19,23 @@ end
 %% General parameters
 tolPos = 1;
 tolVel = 1e-3;
-NWaypoints = 25;
+NWaypoints = 20;
 
 % Reference orbit
-kepEls.a = 350;
+kepEls.a = 40e3;
 kepEls.e = 0;
 kepEls.i = deg2rad(90);
-kepEls.OM = deg2rad(0);
+kepEls.OM = deg2rad(90);
 kepEls.om = deg2rad(0);
 kepEls.theta = 0;
 
-saveFile = "data/bennuWaypoints.mat";
+saveFile = "data/kleopatraWaypoints_orb40_20wp.mat";
 
 %% Data loading
 
 % gravDataPath = "..\GravityData\Kleopatra\Kleopatra_100_radial_snap_update.mat";
-gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
+gravDataPath = "..\GravityData\Kleopatra\final\Kleopatra_100.mat";
+% gravDataPath = "..\GravityData\Bennu\Bennu_100.mat";
 % gravDataPath = "..\GravityData\Itokawa\Itokawa_100.mat";
 environment = environmentConfig(gravDataPath, true);
 [init,TSim] = initConditionWaypointsConfig(kepEls, environment.asteroidMu, environment.asteroidAngularVelocity);
@@ -112,7 +113,10 @@ drawnow;
 
 %% Run differential correction
 
-[x0Dc, TSimDc, DcConverged, DcResidualHistory] = differentialCorrection(init, TSim, model, tolPos, tolVel, 50);
+% [x0Dc, TSimDc, DcConverged, DcResidualHistory] = differentialCorrection(init, TSim, model, tolPos, tolVel, 50);
+warning("Differential correction skipped to speed up the process");
+DcConverged = false;
+DcResidualHistory = [];
 
 if size(DcResidualHistory, 1) > 1
     figure('Name', sprintf('DC convergence'));
@@ -182,7 +186,8 @@ else
     for ii = 1:NWaypoints
         [r_BF, v_BF] = kep2car(kepEls.a, kepEls.e, kepEls.i, ...
                                      kepEls.OM, kepEls.om, thetaVec(ii), environment.asteroidMu);
-        v_BF = v_BF - cross(environment.asteroidAngularVelocity, r_BF);
+        
+        % v_BF = v_BF - cross(environment.asteroidAngularVelocity, r_BF);
         wp_r(ii,:) = r_BF';
         wp_v(ii,:) = v_BF';
     end
@@ -197,6 +202,7 @@ Phi_arcs = zeros(6, 6, NWaypoints);
 drift_pos = zeros(NWaypoints, 1);
 drift_vel = zeros(NWaypoints, 1);
 cond_Phi_rv = zeros(NWaypoints, 1);
+traj_arc = zeros(1e3, 3, NWaypoints);
 
 wp_t = (0 : NWaypoints-1)' * dt_arc;
 
@@ -206,10 +212,11 @@ for k = 1:NWaypoints
     k_next  = mod(k, NWaypoints) + 1;
 
     % Propagate arc under true EOM
-    [x_end, Phi_k, ~, A_k] = STMPropagationRunner(model, init, dt_arc);
+    [x_end, Phi_k, ~, A_k, state] = STMPropagationRunner(model, init, dt_arc);
     Phi_arcs(:,:,k)   = Phi_k;
     cond_Phi_rv(k)    = cond(Phi_k(1:3, 4:6));
     A_arcs(:,:,k)     = A_k;
+    traj_arc(:, :, k) = interp1(state.position.Time, state.position.Data, linspace(0, dt_arc, 1e3));
 
     % Natural drift to next reference waypoint
     x_next_ref  = [wp_r(k_next,:)'; wp_v(k_next,:)'];
@@ -236,6 +243,11 @@ plot3(wp_r(1,1), wp_r(1,2), wp_r(1,3), ...
 % Close the orbit visually
 wp_r_closed = [wp_r; wp_r(1,:)];
 plot3(wp_r_closed(:,1), wp_r_closed(:,2), wp_r_closed(:,3), 'b-');
+
+for ii = 1:NWaypoints
+    plot3(squeeze(traj_arc(:, 1, ii)), squeeze(traj_arc(:, 2, ii)), squeeze(traj_arc(:, 3, ii)), 'r', 'LineWidth', 5)
+end
+
 xlabel('x [m]'); ylabel('y [m]'); zlabel('z [m]');
 title(sprintf('Reference waypoints (%s)', strrep(ref_type,'_',' ')));
 legend("Waypoints", 'Starting position');
